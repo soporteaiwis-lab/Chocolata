@@ -24,84 +24,75 @@ const getDistance = (r1: Rect, r2: Rect) => {
     return Math.sqrt(dx*dx + dy*dy);
 };
 
-// --- SVG Components (Embedded for reliability) ---
+// --- SVG Components (Optimized) ---
 
-const ChocolataSprite = ({ isAttacking, facingRight, runFrame }: { isAttacking: boolean, facingRight: boolean, runFrame: number }) => {
-    return (
-        <svg viewBox="0 0 64 64" className="w-full h-full" style={{ overflow: 'visible', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }}>
-            <g transform={`scale(${facingRight ? 1 : -1}, 1) translate(${facingRight ? 0 : -64}, 0)`}>
-                {/* Tail Animation */}
-                <path d="M10 45 Q-5 30 5 15" stroke="#1f2937" strokeWidth="4" fill="none" strokeLinecap="round" className="animate-[wiggle_1s_ease-in-out_infinite]"/>
-                {/* Back Leg */}
-                <ellipse cx="20" cy={55 + (runFrame % 2 * 2)} rx="5" ry="6" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
-                {/* Body */}
-                <ellipse cx="32" cy="45" rx="20" ry="16" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
-                <path d="M25 35 Q35 25 45 35 Q40 50 30 45" fill="#f97316" opacity="0.9"/>
-                <path d="M35 30 Q45 25 50 40" fill="#1f2937" opacity="0.9"/>
-                {/* Front Leg */}
-                <ellipse cx="44" cy={55 - (runFrame % 2 * 2)} rx="5" ry="6" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
-                {/* Head */}
-                <g transform="translate(36, 18)">
-                    <circle cx="0" cy="0" r="14" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
-                    <path d="M-10 -8 L-14 -20 L-2 -12 Z" fill="#f97316" stroke="#1f2937" strokeWidth="2"/>
-                    <path d="M10 -8 L14 -20 L2 -12 Z" fill="#1f2937" stroke="#1f2937" strokeWidth="2"/>
-                    <circle cx="-5" cy="-2" r="2" fill="#000"/>
-                    <circle cx="5" cy="-2" r="2" fill="#000"/>
-                    <path d="M-3 4 Q0 6 3 4" fill="none" stroke="#000" strokeWidth="1.5"/>
-                    <circle cx="0" cy="2" r="1.5" fill="#pink"/>
-                    <g opacity="0.5">
-                        <line x1="-8" y1="2" x2="-14" y2="0" stroke="#000" strokeWidth="1"/>
-                        <line x1="-8" y1="4" x2="-14" y2="6" stroke="#000" strokeWidth="1"/>
-                        <line x1="8" y1="2" x2="14" y2="0" stroke="#000" strokeWidth="1"/>
-                        <line x1="8" y1="4" x2="14" y2="6" stroke="#000" strokeWidth="1"/>
-                    </g>
+const ChocolataSprite = ({ isAttacking, facingRight, runFrame }: { isAttacking: boolean, facingRight: boolean, runFrame: number }) => (
+    <svg viewBox="0 0 64 64" width="100%" height="100%" style={{ overflow: 'visible', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }}>
+        <g transform={`scale(${facingRight ? 1 : -1}, 1) translate(${facingRight ? 0 : -64}, 0)`}>
+            <path d="M10 45 Q-5 30 5 15" stroke="#1f2937" strokeWidth="4" fill="none" strokeLinecap="round" className="animate-[wiggle_1s_ease-in-out_infinite]"/>
+            <ellipse cx="20" cy={55 + (runFrame % 2 * 2)} rx="5" ry="6" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
+            <ellipse cx="32" cy="45" rx="20" ry="16" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
+            <path d="M25 35 Q35 25 45 35 Q40 50 30 45" fill="#f97316" opacity="0.9"/>
+            <path d="M35 30 Q45 25 50 40" fill="#1f2937" opacity="0.9"/>
+            <ellipse cx="44" cy={55 - (runFrame % 2 * 2)} rx="5" ry="6" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
+            <g transform="translate(36, 18)">
+                <circle cx="0" cy="0" r="14" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
+                <path d="M-10 -8 L-14 -20 L-2 -12 Z" fill="#f97316" stroke="#1f2937" strokeWidth="2"/>
+                <path d="M10 -8 L14 -20 L2 -12 Z" fill="#1f2937" stroke="#1f2937" strokeWidth="2"/>
+                <circle cx="-5" cy="-2" r="2" fill="#000"/>
+                <circle cx="5" cy="-2" r="2" fill="#000"/>
+                <path d="M-3 4 Q0 6 3 4" fill="none" stroke="#000" strokeWidth="1.5"/>
+                <circle cx="0" cy="2" r="1.5" fill="#pink"/>
+                <g opacity="0.5">
+                    <line x1="-8" y1="2" x2="-14" y2="0" stroke="#000" strokeWidth="1"/>
+                    <line x1="-8" y1="4" x2="-14" y2="6" stroke="#000" strokeWidth="1"/>
+                    <line x1="8" y1="2" x2="14" y2="0" stroke="#000" strokeWidth="1"/>
+                    <line x1="8" y1="4" x2="14" y2="6" stroke="#000" strokeWidth="1"/>
                 </g>
-                {isAttacking && <path d="M50 20 L65 30 M52 25 L67 35 M50 30 L65 40" stroke="#fff" strokeWidth="3" className="animate-ping"/>}
             </g>
-        </svg>
-    );
-};
+            {isAttacking && <path d="M50 20 L65 30 M52 25 L67 35 M50 30 L65 40" stroke="#fff" strokeWidth="3" className="animate-ping"/>}
+        </g>
+    </svg>
+);
 
-const AyelenSprite = ({ mood = 'happy' }: { mood?: 'happy' | 'scared' }) => {
-    return (
-        <svg viewBox="0 0 100 150" className="w-full h-full" style={{ overflow: 'visible', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))' }}>
-             <defs>
-                <linearGradient id="skinGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ffe0bd"/>
-                    <stop offset="100%" stopColor="#ffcd94"/>
-                </linearGradient>
-            </defs>
-            <path d="M25 40 Q50 10 75 40 L80 90 Q50 100 20 90 Z" fill="#3E2723"/>
-            <rect x="35" y="110" width="10" height="40" fill="#333"/>
-            <rect x="55" y="110" width="10" height="40" fill="#333"/>
-            <path d="M30 110 L20 140 L80 140 L70 110 Z" fill="#4ecdc4"/>
-            <rect x="30" y="70" width="40" height="45" rx="5" fill="#ff6b6b"/>
-            {mood === 'happy' ? (
-                <>
-                <path d="M30 75 Q15 90 25 105" stroke="#ff6b6b" strokeWidth="8" strokeLinecap="round" fill="none"/>
-                <circle cx="25" cy="105" r="5" fill="#ffe0bd"/>
-                <g className="animate-[wiggle_1s_ease-in-out_infinite] origin-bottom-left" style={{ transformBox: 'fill-box' }}>
-                     <path d="M70 75 L85 50" stroke="#ff6b6b" strokeWidth="8" strokeLinecap="round"/>
-                     <circle cx="85" cy="50" r="5" fill="#ffe0bd"/>
-                </g>
-                </>
-            ) : (
-                <path d="M30 80 Q50 90 70 80" stroke="#ff6b6b" strokeWidth="8" strokeLinecap="round" fill="none"/>
-            )}
-            <rect x="42" y="60" width="16" height="12" fill="#ffe0bd"/>
-            <circle cx="50" cy="45" r="24" fill="url(#skinGrad)"/>
-            <circle cx="42" cy="42" r="2" fill="#333"/>
-            <circle cx="58" cy="42" r="2" fill="#333"/>
-            <path d={mood === 'happy' ? "M42 52 Q50 58 58 52" : "M45 55 Q50 50 55 55"} stroke="#333" strokeWidth="1.5" fill="none"/>
-            <circle cx="35" cy="48" r="3" fill="#ffaaaa" opacity="0.5"/>
-            <circle cx="65" cy="48" r="3" fill="#ffaaaa" opacity="0.5"/>
-            <path d="M25 45 Q25 20 50 20 Q75 20 75 45 Q75 30 70 25 Q50 15 30 25 Q25 35 25 45" fill="#3E2723"/>
-        </svg>
-    );
-};
+const AyelenSprite = ({ mood = 'happy' }: { mood?: 'happy' | 'scared' }) => (
+    <svg viewBox="0 0 100 150" width="100%" height="100%" style={{ overflow: 'visible', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))' }}>
+         <defs>
+            <linearGradient id="skinGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ffe0bd"/>
+                <stop offset="100%" stopColor="#ffcd94"/>
+            </linearGradient>
+        </defs>
+        <path d="M25 40 Q50 10 75 40 L80 90 Q50 100 20 90 Z" fill="#3E2723"/>
+        <rect x="35" y="110" width="10" height="40" fill="#333"/>
+        <rect x="55" y="110" width="10" height="40" fill="#333"/>
+        <path d="M30 110 L20 140 L80 140 L70 110 Z" fill="#4ecdc4"/>
+        <rect x="30" y="70" width="40" height="45" rx="5" fill="#ff6b6b"/>
+        {mood === 'happy' ? (
+            <>
+            <path d="M30 75 Q15 90 25 105" stroke="#ff6b6b" strokeWidth="8" strokeLinecap="round" fill="none"/>
+            <circle cx="25" cy="105" r="5" fill="#ffe0bd"/>
+            <g className="animate-[wiggle_1s_ease-in-out_infinite] origin-bottom-left" style={{ transformBox: 'fill-box' }}>
+                 <path d="M70 75 L85 50" stroke="#ff6b6b" strokeWidth="8" strokeLinecap="round"/>
+                 <circle cx="85" cy="50" r="5" fill="#ffe0bd"/>
+            </g>
+            </>
+        ) : (
+            <path d="M30 80 Q50 90 70 80" stroke="#ff6b6b" strokeWidth="8" strokeLinecap="round" fill="none"/>
+        )}
+        <rect x="42" y="60" width="16" height="12" fill="#ffe0bd"/>
+        <circle cx="50" cy="45" r="24" fill="url(#skinGrad)"/>
+        <circle cx="42" cy="42" r="2" fill="#333"/>
+        <circle cx="58" cy="42" r="2" fill="#333"/>
+        <path d={mood === 'happy' ? "M42 52 Q50 58 58 52" : "M45 55 Q50 50 55 55"} stroke="#333" strokeWidth="1.5" fill="none"/>
+        <circle cx="35" cy="48" r="3" fill="#ffaaaa" opacity="0.5"/>
+        <circle cx="65" cy="48" r="3" fill="#ffaaaa" opacity="0.5"/>
+        <path d="M25 45 Q25 20 50 20 Q75 20 75 45 Q75 30 70 25 Q50 15 30 25 Q25 35 25 45" fill="#3E2723"/>
+    </svg>
+);
 
 const GhostSprite = () => (
-    <svg viewBox="0 0 40 40" className="w-full h-full opacity-80 animate-pulse">
+    <svg viewBox="0 0 40 40" width="100%" height="100%" className="w-full h-full opacity-80 animate-pulse">
         <path d="M5 20 Q5 5 20 5 Q35 5 35 20 L35 35 Q30 30 25 35 Q20 30 15 35 Q10 30 5 35 Z" fill="#e2e8f0" filter="drop-shadow(0 0 5px #a855f7)"/>
         <circle cx="15" cy="18" r="2" fill="#000"/>
         <circle cx="25" cy="18" r="2" fill="#000"/>
@@ -169,10 +160,7 @@ const AudioEngine = {
 };
 
 export default function App() {
-  // --- Responsive Scale State ---
   const [scale, setScale] = useState(1);
-
-  // --- Game State ---
   const [status, setStatus] = useState<GameStatus>('MENU');
   const [currentLevelIdx, setCurrentLevelIdx] = useState(0);
   const [unlockedLevel, setUnlockedLevel] = useState(0);
@@ -181,10 +169,8 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [showDoorMessage, setShowDoorMessage] = useState(false);
-  
   const [, setTick] = useState(0);
 
-  // --- Refs ---
   const requestRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
   const playerRef = useRef({
@@ -196,41 +182,35 @@ export default function App() {
   const particlesRef = useRef<Particle[]>([]);
   const keysRef = useRef<{ [key: string]: boolean }>({});
 
-  // --- Scaling Logic ---
   useEffect(() => {
     const handleResize = () => {
         const maxWidth = window.innerWidth;
         const maxHeight = window.innerHeight;
-        // Target aspect ratio 800x600 (4:3)
         const scaleX = maxWidth / 800;
         const scaleY = maxHeight / 600;
-        // Use the smaller scale to fit entirely on screen with margin
         const newScale = Math.min(scaleX, scaleY) * 0.95; 
         setScale(newScale);
     };
-    
     window.addEventListener('resize', handleResize);
-    handleResize(); // Init
+    handleResize();
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- Persistence ---
   useEffect(() => {
     const savedLevel = localStorage.getItem('chocolata_unlocked_level');
     if (savedLevel) setUnlockedLevel(parseInt(savedLevel, 10));
   }, []);
 
   const saveProgress = (levelIdx: number) => {
-      const nextLevel = levelIdx; 
-      if (nextLevel > unlockedLevel && nextLevel < LEVELS.length) {
-          setUnlockedLevel(nextLevel);
-          localStorage.setItem('chocolata_unlocked_level', nextLevel.toString());
+      if (levelIdx > unlockedLevel && levelIdx < LEVELS.length) {
+          setUnlockedLevel(levelIdx);
+          localStorage.setItem('chocolata_unlocked_level', levelIdx.toString());
       }
   };
 
   const playSound = (type: 'jump' | 'collect' | 'scratch' | 'hit' | 'win' | 'open') => {
     if (isMuted) return;
-    AudioEngine.init();
+    // We assume AudioEngine.init() was called during user interaction
     AudioEngine.playSFX(type);
   };
 
@@ -240,7 +220,6 @@ export default function App() {
       return () => AudioEngine.stopBGM();
   }, [isMuted, status]);
 
-  // --- Game Mechanics ---
   const initLevel = (levelIdx: number) => {
     const levelTemplate = LEVELS[levelIdx];
     if (!levelTemplate) {
@@ -250,7 +229,6 @@ export default function App() {
     levelRef.current = JSON.parse(JSON.stringify(levelTemplate));
     
     if (levelRef.current) {
-        levelRef.current.enemies.forEach(e => { e.originalY = e.y; });
         playerRef.current = {
             ...playerRef.current,
             x: levelRef.current.playerStart.x,
@@ -292,10 +270,10 @@ export default function App() {
               if (enemy.state === 'HIDDEN' && dist < enemy.detectionRange) enemy.state = 'SURPRISE';
               else if (enemy.state === 'SURPRISE') {
                   enemy.y -= 5;
-                  if (enemy.originalY && enemy.y < enemy.originalY - 80) enemy.state = 'PATROL'; 
+                  if (typeof enemy.originalY === 'number' && enemy.y < enemy.originalY - 80) enemy.state = 'PATROL'; 
               } else if (enemy.state === 'PATROL') {
                   enemy.x += enemy.direction;
-                  if (enemy.originalY && enemy.y < enemy.originalY) enemy.y += 2; 
+                  if (typeof enemy.originalY === 'number' && enemy.y < enemy.originalY) enemy.y += 2; 
               }
               break;
           case EnemyType.GHOST:
@@ -309,13 +287,44 @@ export default function App() {
       }
   };
 
+  const killPlayer = () => {
+    if (playerRef.current.isDead) return;
+    playerRef.current.isDead = true;
+    playSound('hit');
+    setLives(prev => {
+        const newLives = prev - 1;
+        if (newLives <= 0) setStatus('GAME_OVER');
+        else setTimeout(() => {
+            if (levelRef.current) {
+                playerRef.current = { ...playerRef.current, x: levelRef.current.playerStart.x, y: levelRef.current.playerStart.y, vx: 0, vy: 0, isDead: false, invulnerableTimer: INVULNERABILITY_FRAMES };
+                levelRef.current.enemies.forEach(e => {
+                    e.isDead = false;
+                    if(e.enemyType === EnemyType.DOG) e.state = 'SLEEP';
+                    if(e.enemyType === EnemyType.CUCUMBER) e.state = 'HIDDEN';
+                    // Strict Reset to original Y
+                    if(typeof e.originalY === 'number') e.y = e.originalY;
+                });
+            }
+        }, 1000);
+        return newLives;
+    });
+  };
+
+  const handleLevelComplete = () => {
+    setStatus('LEVEL_COMPLETE'); setScore(p => p + 500); playSound('win');
+    const nextIdx = currentLevelIdx + 1; saveProgress(nextIdx);
+    setTimeout(() => {
+        if (nextIdx >= LEVELS.length) setStatus('VICTORY');
+        else { setCurrentLevelIdx(nextIdx); initLevel(nextIdx); setStatus('PLAYING'); }
+    }, 3000);
+  };
+
   const update = (dt: number) => {
     if (status !== 'PLAYING' || !levelRef.current) return;
     const player = playerRef.current;
     const level = levelRef.current;
     const physics = level.physics;
 
-    // Player Physics
     if (!player.isDead) {
         let moved = false;
         if (keysRef.current['ArrowRight']) { player.vx += 0.8; player.facingRight = true; moved = true; } 
@@ -358,19 +367,16 @@ export default function App() {
         }
     }
 
-    // Jump
     if (keysRef.current['ArrowUp']) {
         if (player.isGrounded) { player.vy = JUMP_FORCE; player.isGrounded = false; playSound('jump'); } 
         else if (player.isWallSliding) { player.vy = WALL_JUMP_FORCE.y; player.vx = -player.wallDir * WALL_JUMP_FORCE.x; player.isWallSliding = false; playSound('jump'); }
     }
     if (player.isWallSliding && player.vy > 0) player.vy = Math.min(player.vy, WALL_SLIDE_SPEED);
 
-    // Bounds
     if (player.x < 0) player.x = 0;
     if (player.x > level.width - player.w) player.x = level.width - player.w;
     if (player.y > level.height + 100) killPlayer();
 
-    // Interaction
     level.yarns.forEach(yarn => {
         if (!yarn.collected && rectIntersect(player, yarn)) {
             yarn.collected = true;
@@ -410,37 +416,6 @@ export default function App() {
     if (allCollected && rectIntersect(player, level.door)) handleLevelComplete();
   };
 
-  const killPlayer = () => {
-    if (playerRef.current.isDead) return;
-    playerRef.current.isDead = true;
-    playSound('hit');
-    setLives(prev => {
-        const newLives = prev - 1;
-        if (newLives <= 0) setStatus('GAME_OVER');
-        else setTimeout(() => {
-            if (levelRef.current) {
-                playerRef.current = { ...playerRef.current, x: levelRef.current.playerStart.x, y: levelRef.current.playerStart.y, vx: 0, vy: 0, isDead: false, invulnerableTimer: INVULNERABILITY_FRAMES };
-                levelRef.current.enemies.forEach(e => {
-                    e.isDead = false;
-                    if(e.enemyType === EnemyType.DOG) e.state = 'SLEEP';
-                    if(e.enemyType === EnemyType.CUCUMBER) e.state = 'HIDDEN';
-                    if(e.originalY) e.y = e.originalY;
-                });
-            }
-        }, 1000);
-        return newLives;
-    });
-  };
-
-  const handleLevelComplete = () => {
-    setStatus('LEVEL_COMPLETE'); setScore(p => p + 500); playSound('win');
-    const nextIdx = currentLevelIdx + 1; saveProgress(nextIdx);
-    setTimeout(() => {
-        if (nextIdx >= LEVELS.length) setStatus('VICTORY');
-        else { setCurrentLevelIdx(nextIdx); initLevel(nextIdx); setStatus('PLAYING'); }
-    }, 3000);
-  };
-
   const gameLoop = useCallback((time: number) => {
     const dt = time - lastTimeRef.current; lastTimeRef.current = time;
     update(dt);
@@ -461,6 +436,7 @@ export default function App() {
   }, [status, gameLoop]);
 
   const startGame = (fromSave = false) => {
+    // Explicitly initialize audio on user interaction
     AudioEngine.init();
     setLives(MAX_LIVES); setScore(0); 
     const startLevel = fromSave ? unlockedLevel : 0;
@@ -468,13 +444,12 @@ export default function App() {
   };
 
   const retryLevel = () => {
-    setLives(MAX_LIVES);
-    setScore(0);
-    initLevel(currentLevelIdx);
-    setStatus('PLAYING');
+      setLives(MAX_LIVES);
+      setScore(0);
+      initLevel(currentLevelIdx);
+      setStatus('PLAYING');
   };
 
-  // --- Rendering ---
   const getThemeBackground = () => {
       const theme = levelRef.current?.theme || 'kitchen';
       if (theme === 'kitchen') return ASSETS.bg.kitchen;
@@ -486,7 +461,6 @@ export default function App() {
   
   const getThemeColors = () => {
       const theme = levelRef.current?.theme || 'kitchen';
-      // Returns fallback colors if image fails
       if (theme === 'kitchen') return '#f3f4f6';
       if (theme === 'garden') return '#d1fae5';
       if (theme === 'roof') return '#1e3a8a';
@@ -505,7 +479,6 @@ export default function App() {
           <div 
             className="relative w-[800px] h-[600px] overflow-hidden shadow-2xl bg-black"
             style={{ 
-                // Reliable background rendering with fallback color
                 backgroundColor: getThemeColors(),
                 backgroundImage: `url(${getThemeBackground()})`,
                 backgroundSize: 'cover',
@@ -513,7 +486,6 @@ export default function App() {
                 boxShadow: '0 0 50px rgba(0,0,0,0.5)'
             }}
           >
-              {/* Overlay for atmosphere & contrast */}
               <div className={`absolute inset-0 pointer-events-none transition-colors duration-1000 ${isCastle ? 'bg-purple-900/30 mix-blend-multiply' : 'bg-black/10'}`}></div>
               <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]"></div>
 
@@ -527,7 +499,6 @@ export default function App() {
                   <div className="text-blue-300 drop-shadow-md">NIVEL {currentLevelIdx + 1}</div>
               </div>
 
-              {/* Notification */}
               {showDoorMessage && (
                   <div className="absolute top-32 left-1/2 -translate-x-1/2 bg-yellow-400 text-black px-8 py-4 rounded-xl border-4 border-black font-bold animate-bounce z-50 shadow-2xl text-2xl tracking-wider">
                       {isCastle ? "¡JAULA ABIERTA!" : "¡PUERTA ABIERTA!"}
@@ -542,7 +513,7 @@ export default function App() {
                     backgroundColor: isCastle ? 'transparent' : (allYarnsCollected ? '#4ade80' : '#451a03'),
                     border: isCastle ? 'none' : '4px solid #2a1b1a',
                     boxShadow: isCastle ? 'none' : '5px 5px 10px rgba(0,0,0,0.5)',
-                    transform: 'translateZ(0)' // GPU Accel
+                    transform: 'translateZ(0)'
                 }}
               >
                   {isCastle ? (
@@ -567,7 +538,6 @@ export default function App() {
                   )}
               </div>
 
-              {/* Platforms */}
               {platforms.map((p, i) => {
                   let textureUrl = ASSETS.textures.brick;
                   if (p.texture === 'table') textureUrl = ASSETS.textures.wood;
@@ -593,20 +563,18 @@ export default function App() {
                             boxShadow: isOneWay ? '0 5px 5px rgba(0,0,0,0.3)' : '0 4px 8px rgba(0,0,0,0.5)'
                         }}
                     >
-                        {/* Grass top detail */}
                         {p.texture === 'grass' && <div className="absolute -top-3 left-0 w-full h-4 bg-green-500/30 blur-[1px] rounded-t-lg"></div>}
                     </div>
                   );
               })}
 
-              {/* Collectibles (Yarns) */}
               {yarns.filter(y => !y.collected).map(y => (
                   <div 
                     key={y.id} 
                     className="absolute bg-yellow-400 rounded-full border-2 border-white animate-bounce flex items-center justify-center z-10"
                     style={{ 
                         left: y.x, top: y.y, width: y.w, height: y.h,
-                        boxShadow: '0 0 15px #facc15' // Glow effect
+                        boxShadow: '0 0 15px #facc15'
                     }}
                   >
                       <div className="w-full h-[1px] bg-yellow-700 absolute rotate-45"></div>
@@ -615,7 +583,6 @@ export default function App() {
                   </div>
               ))}
 
-              {/* Enemies */}
               {enemies.filter(e => !e.isDead).map(e => (
                   <div 
                     key={e.id} 
@@ -659,7 +626,6 @@ export default function App() {
                   </div>
               ))}
 
-              {/* Player - CHOCOLATA */}
               <div 
                 className={`absolute transition-opacity z-10 ${player.invulnerableTimer > 0 && player.invulnerableTimer % 4 < 2 ? 'opacity-50' : 'opacity-100'}`}
                 style={{ 
@@ -669,7 +635,6 @@ export default function App() {
                  <ChocolataSprite isAttacking={player.isAttacking} facingRight={player.facingRight} runFrame={Math.floor(player.frame / 5)} />
               </div>
 
-              {/* Particles */}
               {particlesRef.current.map(p => (
                   <div key={p.id} className="absolute w-2 h-2 rounded-full" style={{ left: p.x, top: p.y, backgroundColor: p.color, opacity: p.life / 20, boxShadow: `0 0 5px ${p.color}` }}></div>
               ))}
@@ -679,13 +644,11 @@ export default function App() {
 
   return (
     <div className="fixed inset-0 bg-[#0a0a0a] flex items-center justify-center font-mono select-none overflow-hidden">
-        {/* Background Pattern */}
         <div className="absolute inset-0 opacity-20" style={{ 
             backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', 
             backgroundSize: '30px 30px' 
         }}></div>
 
-        {/* Scaled Game Container */}
         <div 
             style={{ 
                 transform: `scale(${scale})`,
@@ -768,7 +731,7 @@ export default function App() {
             )}
 
             <div className="absolute bottom-4 left-4 right-4 flex justify-between text-white/50 text-xs font-bold pointer-events-none">
-                 <span>v2.0 HD REMASTER</span>
+                 <span>v2.1 HD REMASTER - AUDIO ENHANCED</span>
                  <div className="pointer-events-auto cursor-pointer flex items-center gap-2 hover:text-white transition-colors" onClick={() => setIsMuted(!isMuted)}>
                     {isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>} {isMuted ? "SILENCIO" : "SONIDO ON"}
                  </div>

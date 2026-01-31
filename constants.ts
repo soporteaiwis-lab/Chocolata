@@ -17,18 +17,17 @@ export const ASSETS = {
     bg: {
         kitchen: "https://images.unsplash.com/photo-1556910103-1c02745a30bf?q=80&w=1600&auto=format&fit=crop", 
         garden: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=1600&auto=format&fit=crop", 
-        roof: "https://images.unsplash.com/photo-1534234828569-1f27c71f9855?q=80&w=1600&auto=format&fit=crop", // More cloudy/windy look
-        castle: "https://images.unsplash.com/photo-1505587043598-a6da2ee1da2f?q=80&w=1600&auto=format&fit=crop", // Spooky Foggy Castle
+        roof: "https://images.unsplash.com/photo-1534234828569-1f27c71f9855?q=80&w=1600&auto=format&fit=crop",
+        castle: "https://images.unsplash.com/photo-1505587043598-a6da2ee1da2f?q=80&w=1600&auto=format&fit=crop",
     },
     textures: {
-        brick: "https://images.unsplash.com/photo-1588612547040-798c602058b8?q=80&w=200&auto=format&fit=crop", // Red Brick
-        wood: "https://images.unsplash.com/photo-1542456637-a16f6b571182?q=80&w=200&auto=format&fit=crop", // Dark Wood
-        table: "https://images.unsplash.com/photo-1513682902306-03c004386903?q=80&w=200&auto=format&fit=crop", // Light Wood
+        brick: "https://images.unsplash.com/photo-1588612547040-798c602058b8?q=80&w=200&auto=format&fit=crop",
+        wood: "https://images.unsplash.com/photo-1542456637-a16f6b571182?q=80&w=200&auto=format&fit=crop",
+        table: "https://images.unsplash.com/photo-1513682902306-03c004386903?q=80&w=200&auto=format&fit=crop",
         grass: "https://images.unsplash.com/photo-1558223611-64c6dc9014b2?q=80&w=200&auto=format&fit=crop",
-        ice: "https://images.unsplash.com/photo-1571783472097-4b7113f8c5b9?q=80&w=200&auto=format&fit=crop", // Blue Ice
-        stone: "https://images.unsplash.com/photo-1629016943072-0bf0ce4e2608?q=80&w=200&auto=format&fit=crop", // Grey Castle Stone
+        ice: "https://images.unsplash.com/photo-1571783472097-4b7113f8c5b9?q=80&w=200&auto=format&fit=crop",
+        stone: "https://images.unsplash.com/photo-1629016943072-0bf0ce4e2608?q=80&w=200&auto=format&fit=crop",
     }
-    // Note: Characters are now rendered via SVG components in App.tsx to prevent broken images.
 };
 
 // --- Dimensions ---
@@ -74,6 +73,7 @@ const parseLevel = (
                 
                 const type = isOneWay ? 'oneway' : 'solid';
 
+                // Optimization: Merge adjacent platforms of same type into one wide platform
                 if (currentPlat && 
                     currentPlat.type === type && 
                     currentPlat.isSlippery === isSlippery && 
@@ -107,7 +107,8 @@ const parseLevel = (
                     enemies.push({
                         id: `e-${id}-${x}-${y}`, x, y: y + 10, w: 40, h: 30,
                         enemyType: EnemyType.ROOMBA, patrolStart: x - 100, patrolEnd: x + 100,
-                        direction: 1, speed: 2, state: 'PATROL', stateTimer: 0, detectionRange: 0
+                        direction: 1, speed: 2, state: 'PATROL', stateTimer: 0, detectionRange: 0,
+                        originalY: y + 10
                     });
                     break;
                 case 'C': 
@@ -122,21 +123,24 @@ const parseLevel = (
                     enemies.push({
                         id: `e-${id}-${x}-${y}`, x, y: y + 8, w: 48, h: 32,
                         enemyType: EnemyType.DOG, patrolStart: x - 150, patrolEnd: x + 150,
-                        direction: 1, speed: 3.5, state: 'SLEEP', stateTimer: 0, detectionRange: 160
+                        direction: 1, speed: 3.5, state: 'SLEEP', stateTimer: 0, detectionRange: 160,
+                        originalY: y + 8
                     });
                     break;
                 case 'B': 
                     enemies.push({
                         id: `e-${id}-${x}-${y}`, x, y, w: 40, h: 30,
                         enemyType: EnemyType.BIRD, patrolStart: x - 200, patrolEnd: x + 200,
-                        direction: 1, speed: 2.5, state: 'PATROL', stateTimer: 0, detectionRange: 0
+                        direction: 1, speed: 2.5, state: 'PATROL', stateTimer: 0, detectionRange: 0,
+                        originalY: y
                     });
                     break;
-                case 'H': // Ghost (H for Haunt)
+                case 'H': 
                      enemies.push({
                         id: `e-${id}-${x}-${y}`, x, y: y - 20, w: 32, h: 40,
                         enemyType: EnemyType.GHOST, patrolStart: x - 150, patrolEnd: x + 150,
-                        direction: 1, speed: 1.5, state: 'PATROL', stateTimer: 0, detectionRange: 0
+                        direction: 1, speed: 1.5, state: 'PATROL', stateTimer: 0, detectionRange: 0,
+                        originalY: y - 20
                     });
                     break;
             }
@@ -144,6 +148,7 @@ const parseLevel = (
         if (currentPlat) platforms.push(currentPlat);
     });
 
+    // World Boundaries
     platforms.push({ x: -40, y: 0, w: 40, h: height, type: 'solid' }); 
     platforms.push({ x: width, y: 0, w: 40, h: height, type: 'solid' }); 
     platforms.push({ x: 0, y: -1000, w: width, h: 40, type: 'solid' });
@@ -157,7 +162,6 @@ const parseLevel = (
 
 // --- Level Designs ---
 
-// Level 1: La Cocina Caótica
 const LEVEL_1_MAP = [
     "....................",
     "....................",
@@ -176,7 +180,6 @@ const LEVEL_1_MAP = [
     "SSSSSSSSSSSSSSSSSSSS",
 ];
 
-// Level 2: El Jardín
 const LEVEL_2_MAP = [
     "....................",
     "....................",
@@ -195,7 +198,6 @@ const LEVEL_2_MAP = [
     "XXXXXXXXXXXXXXXXXXXX", 
 ];
 
-// Level 3: El Tejado
 const LEVEL_3_MAP = [
     "....................",
     "....................",
@@ -214,7 +216,6 @@ const LEVEL_3_MAP = [
     "XXXXXXXXXXXXXXXXXXXX", 
 ];
 
-// Level 4: El Castillo Embrujado (New Final Level)
 const LEVEL_4_MAP = [
     "....................",
     "....................",
@@ -228,7 +229,7 @@ const LEVEL_4_MAP = [
     "X..X...O...X.......X",
     "X..X..XXXXXX.......X",
     "X..X.......X.......X",
-    "X..X..P....X...D...X", // Door is actually a cage for Ayelen logic
+    "X..X..P....X...D...X", 
     "X..X.......X.......X",
     "XXXXXXXXXXXXXXXXXXXX", 
 ];
