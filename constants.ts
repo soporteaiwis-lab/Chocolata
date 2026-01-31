@@ -164,8 +164,7 @@ const parseLevel = (
 // --- Level Designs ---
 
 // Level 1: La Cocina Caótica
-// Redesigned to be more open. 3 Yarns guaranteed.
-// = = One Way Platform (Table tops, shelves)
+// FIXED: Removed the wall 'cage' around the door. The door is now accessible on the right.
 const LEVEL_1_MAP = [
     "....................",
     "....................",
@@ -178,9 +177,9 @@ const LEVEL_1_MAP = [
     "X...=..=......O....X", // Low Yarn (on floor right)
     "X...=..=...........X", 
     "XP.......R.........X", // Player Start & Roomba
-    "XXXXX......SSSSSS..X", 
-    "X..........S....S..X",
-    "X...C......S.D..S..X", // Door accessed via slip floor
+    "XXXXX..............X", // Open space
+    "X..................X", // Open space
+    "X...C...........D..X", // Door accessed freely on the floor
     "SSSSSSSSSSSSSSSSSSSS", // Floor
 ];
 
