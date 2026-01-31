@@ -15,15 +15,19 @@ export const MAX_LIVES = 9;
 // --- Assets (High Quality Unsplash Textures) ---
 export const ASSETS = {
     bg: {
-        kitchen: "https://images.unsplash.com/photo-1556910103-1c02745a30bf?q=80&w=1600&auto=format&fit=crop", 
-        garden: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?q=80&w=1600&auto=format&fit=crop", 
-        roof: "https://images.unsplash.com/photo-1534234828569-1f27c71f9855?q=80&w=1600&auto=format&fit=crop",
-        castle: "https://images.unsplash.com/photo-1505587043598-a6da2ee1da2f?q=80&w=1600&auto=format&fit=crop",
+        // Vibrant, warm kitchen instead of gray stainless steel
+        kitchen: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1600&auto=format&fit=crop", 
+        // Blurred forest/garden background to make foreground platforms pop
+        garden: "https://images.unsplash.com/photo-1518131392939-78709569c878?q=80&w=1600&auto=format&fit=crop", 
+        // Clearer blue sky with roof details
+        roof: "https://images.unsplash.com/photo-1516934898236-84883492576b?q=80&w=1600&auto=format&fit=crop",
+        // Spooky but clearer castle hall
+        castle: "https://images.unsplash.com/photo-1599691459438-66487e49e099?q=80&w=1600&auto=format&fit=crop",
     },
     textures: {
         brick: "https://images.unsplash.com/photo-1588612547040-798c602058b8?q=80&w=200&auto=format&fit=crop",
-        wood: "https://images.unsplash.com/photo-1542456637-a16f6b571182?q=80&w=200&auto=format&fit=crop",
-        table: "https://images.unsplash.com/photo-1513682902306-03c004386903?q=80&w=200&auto=format&fit=crop",
+        wood: "https://images.unsplash.com/photo-1513682902306-03c004386903?q=80&w=200&auto=format&fit=crop", // Darker wood for contrast
+        table: "https://images.unsplash.com/photo-1542456637-a16f6b571182?q=80&w=200&auto=format&fit=crop",
         grass: "https://images.unsplash.com/photo-1558223611-64c6dc9014b2?q=80&w=200&auto=format&fit=crop",
         ice: "https://images.unsplash.com/photo-1571783472097-4b7113f8c5b9?q=80&w=200&auto=format&fit=crop",
         stone: "https://images.unsplash.com/photo-1629016943072-0bf0ce4e2608?q=80&w=200&auto=format&fit=crop",
@@ -211,7 +215,7 @@ const LEVEL_3_MAP = [
     "X.XXXX......X...O..X",
     "X....X......X..XXXXX",
     "X....X......X......X",
-    "X....P......X..D...X",
+    "X....P......X..D...X", 
     "X......B...........X",
     "XXXXXXXXXXXXXXXXXXXX", 
 ];

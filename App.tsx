@@ -486,8 +486,8 @@ export default function App() {
                 boxShadow: '0 0 50px rgba(0,0,0,0.5)'
             }}
           >
-              <div className={`absolute inset-0 pointer-events-none transition-colors duration-1000 ${isCastle ? 'bg-purple-900/30 mix-blend-multiply' : 'bg-black/10'}`}></div>
-              <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)]"></div>
+              <div className={`absolute inset-0 pointer-events-none transition-colors duration-1000 ${isCastle ? 'bg-purple-900/40 mix-blend-multiply' : 'bg-black/5'}`}></div>
+              <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.4)_100%)]"></div>
 
               {/* HUD */}
               <div className="absolute top-4 left-4 z-50 flex gap-4 text-white font-bold bg-black/60 p-3 rounded-2xl border border-white/10 shadow-lg backdrop-blur-md">
@@ -546,6 +546,27 @@ export default function App() {
                   if (p.texture === 'stone') textureUrl = ASSETS.textures.stone;
                   const isOneWay = p.type === 'oneway';
 
+                  // Definition Logic
+                  let borderStyle = isOneWay ? 'none' : '2px solid rgba(0,0,0,0.8)';
+                  let borderTopStyle = '2px solid rgba(255,255,255,0.3)';
+                  let boxShadow = '0 8px 10px rgba(0,0,0,0.5)';
+                  
+                  if (p.texture === 'grass') {
+                      borderStyle = '2px solid #14532d'; // Dark Green
+                      borderTopStyle = '4px solid #4ade80'; // Light Green
+                      boxShadow = '0 10px 15px rgba(0,0,0,0.6)';
+                  } else if (p.texture === 'table' || p.texture === 'wood') {
+                      borderStyle = '2px solid #451a03'; // Dark Wood
+                      borderTopStyle = '2px solid #d97706'; // Light Wood
+                  } else if (p.texture === 'ice') {
+                      borderStyle = '1px solid #0891b2';
+                      borderTopStyle = '3px solid #cffafe';
+                      boxShadow = '0 4px 15px rgba(6,182,212,0.4)';
+                  } else if (p.texture === 'stone') {
+                      borderStyle = '2px solid #171717';
+                      borderTopStyle = '2px solid #525252';
+                  }
+
                   return (
                     <div 
                         key={i} 
@@ -554,16 +575,15 @@ export default function App() {
                             left: p.x, top: p.y, width: p.w, 
                             backgroundImage: `url(${textureUrl})`,
                             backgroundSize: '40px 40px',
-                            borderTop: '2px solid rgba(255,255,255,0.4)',
-                            borderBottom: isOneWay ? 'none' : '4px solid rgba(0,0,0,0.6)',
-                            borderLeft: isOneWay ? 'none' : '1px solid rgba(0,0,0,0.3)',
-                            borderRight: isOneWay ? 'none' : '1px solid rgba(0,0,0,0.3)',
-                            borderRadius: isOneWay ? '4px' : '2px',
+                            border: borderStyle,
+                            borderTop: borderTopStyle,
+                            borderBottom: isOneWay ? 'none' : borderStyle,
+                            borderRadius: isOneWay ? '6px' : '4px',
                             height: isOneWay ? '15px' : p.h,
-                            boxShadow: isOneWay ? '0 5px 5px rgba(0,0,0,0.3)' : '0 4px 8px rgba(0,0,0,0.5)'
+                            boxShadow: boxShadow,
+                            imageRendering: 'pixelated'
                         }}
                     >
-                        {p.texture === 'grass' && <div className="absolute -top-3 left-0 w-full h-4 bg-green-500/30 blur-[1px] rounded-t-lg"></div>}
                     </div>
                   );
               })}
