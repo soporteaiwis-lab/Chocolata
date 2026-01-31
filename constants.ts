@@ -20,8 +20,8 @@ export const PLAYER_SIZE = { w: 32, h: 32 };
   Legend:
   . = Empty
   X = Solid Block (Wall/Floor)
+  = = One-Way Platform (Jump through from bottom, land on top)
   S = Slippery Block (Ice/Wet Floor)
-  = = Platform (Jump through - Not fully implemented, treated as solid for now or cosmetic)
   P = Player Start
   O = Yarn (Ovillo)
   D = Door
@@ -62,22 +62,32 @@ const parseLevel = (
             // --- Platforms (Row merging optimization) ---
             const isSolid = char === 'X';
             const isSlippery = char === 'S';
+            const isOneWay = char === '=';
             
-            if (isSolid || isSlippery) {
+            if (isSolid || isSlippery || isOneWay) {
                 // Determine texture based on theme and type
                 let texture: Platform['texture'] = 'brick';
                 if (theme === 'garden') texture = 'grass';
                 if (theme === 'kitchen' && isSlippery) texture = 'ice';
-                if (theme === 'kitchen' && isSolid) texture = 'table';
+                if (theme === 'kitchen' && isSolid) texture = 'brick'; // Floor
+                if (theme === 'kitchen' && isOneWay) texture = 'table';
+                if (theme === 'roof') texture = 'brick';
                 
-                if (currentPlat && currentPlat.isSlippery === isSlippery && currentPlat.x + currentPlat.w === x) {
+                const type = isOneWay ? 'oneway' : 'solid';
+
+                // Attempt to merge with previous horizontal platform if same type
+                if (currentPlat && 
+                    currentPlat.type === type && 
+                    currentPlat.isSlippery === isSlippery && 
+                    currentPlat.texture === texture &&
+                    currentPlat.x + currentPlat.w === x) {
                     // Extend existing platform
                     currentPlat.w += TILE_SIZE;
                 } else {
                     if (currentPlat) platforms.push(currentPlat);
                     currentPlat = {
                         x, y, w: TILE_SIZE, h: TILE_SIZE,
-                        type: 'solid',
+                        type,
                         isSlippery,
                         texture
                     };
@@ -141,7 +151,7 @@ const parseLevel = (
     // Add boundaries
     platforms.push({ x: -40, y: 0, w: 40, h: height, type: 'solid' }); // Left
     platforms.push({ x: width, y: 0, w: 40, h: height, type: 'solid' }); // Right
-    // Top boundary is open-ish, but let's cap it way up
+    // Top boundary is open-ish
     platforms.push({ x: 0, y: -1000, w: width, h: 40, type: 'solid' });
 
     return {
@@ -153,59 +163,58 @@ const parseLevel = (
 
 // --- Level Designs ---
 
-// Level 1: La Cocina Caótica (20x15)
-// S = Slippery (Table/Floor), X = Solid (Counter/Shelf)
+// Level 1: La Cocina Caótica
+// Redesigned to be more open. 3 Yarns guaranteed.
+// = = One Way Platform (Table tops, shelves)
 const LEVEL_1_MAP = [
     "....................",
     "....................",
-    "X..................X",
-    "X..........O.......X",
-    "X...XXX............X",
-    "X.........S........X", // Shelf
-    "X.........S....O...X", // Shelf
-    "X...P...SSSSS......X", // Table
-    "X.......S...S......X", // Table legs
-    "X.......S...S...R..X", // Roomba under table
-    "X.XXXX..S...SSSSSSSX", // Floor variations
-    "X.......S..........X",
-    "X...C...S..........X", // Cucumber hidden
-    "X.......S.....D....X",
-    "SSSSSSSSSSSSSSSSSSSS", // Slippery Floor
+    "X.....O.............", // High Yarn
+    "X....===............", // High Shelf
+    "X.........===......X", // Mid Shelf
+    "X..................X", 
+    "X....O.............X", // Mid Yarn
+    "X...====...........X", // Table
+    "X...=..=......O....X", // Low Yarn (on floor right)
+    "X...=..=...........X", 
+    "XP.......R.........X", // Player Start & Roomba
+    "XXXXX......SSSSSS..X", 
+    "X..........S....S..X",
+    "X...C......S.D..S..X", // Door accessed via slip floor
+    "SSSSSSSSSSSSSSSSSSSS", // Floor
 ];
 
-// Level 2: El Jardín (20x15)
-// X = Grass/Branch, G = Dog, B = Bird
+// Level 2: El Jardín
 const LEVEL_2_MAP = [
     "....................",
     "....................",
     "X.....B............X",
-    "X..........O.......X",
+    "X..........O.......X", // Yarn 1
     "X..................X",
-    "X.......XXXXX......X", // High branch
-    "X...O..............X",
-    "X.XXXXX.........O..X", // Mid branch
+    "X.......XXXXX......X", // Branch
+    "X...O..............X", // Yarn 2
+    "X.XXXXX.........O..X", // Yarn 3 (Mid branch)
     "X..................X",
-    "X.......XXXXXX.....X", // Low wall
+    "X.......XXXXXX.....X", 
     "X...P..............X",
-    "X.................DX", // Door high up? No, let's put it on a ledge
+    "X.................DX", 
     "X................XXX",
-    "X......G.......G...X", // Dogs sleeping
-    "XXXXXXXXXXXXXXXXXXXX", // Grass
+    "X......G.......G...X", 
+    "XXXXXXXXXXXXXXXXXXXX", 
 ];
 
-// Level 3: El Tejado (20x15)
-// Wind enabled. B = Birds.
+// Level 3: El Tejado
 const LEVEL_3_MAP = [
     "....................",
     "....................",
     "X..................X",
-    "X...O.....B........X",
-    "X..XXX.............X", // Antenna
+    "X...O.....B........X", // Yarn 1
+    "X..XXX.............X", 
     "X...X..............X",
-    "X...X.......XXXX...X", // Floating debris
-    "X.......O...X......X",
+    "X...X.......XXXX...X", 
+    "X.......O...X......X", // Yarn 2
     "X...........X......X",
-    "X.XXXX......X...O..X",
+    "X.XXXX......X...O..X", // Yarn 3
     "X....X......X..XXXXX",
     "X....X......X......X",
     "X....P......X..D...X",
@@ -214,7 +223,7 @@ const LEVEL_3_MAP = [
 ];
 
 export const LEVELS = [
-    parseLevel(LEVEL_1_MAP, 1, "La Cocina Caótica", "¡Cuidado, el suelo resbala!", 'kitchen', { friction: FRICTION_ICE, wind: 0 }),
-    parseLevel(LEVEL_2_MAP, 2, "El Jardín", "Shhh... los perros duermen.", 'garden', { friction: FRICTION_DEFAULT, wind: 0 }),
-    parseLevel(LEVEL_3_MAP, 3, "El Tejado", "¡Viento fuerte!", 'roof', { friction: FRICTION_DEFAULT, wind: -0.25 }),
+    parseLevel(LEVEL_1_MAP, 1, "La Cocina Caótica", "¡Cuidado con la Roomba!", 'kitchen', { friction: FRICTION_ICE, wind: 0 }),
+    parseLevel(LEVEL_2_MAP, 2, "El Jardín", "No despiertes a los perros.", 'garden', { friction: FRICTION_DEFAULT, wind: 0 }),
+    parseLevel(LEVEL_3_MAP, 3, "El Tejado", "¡Mucho viento!", 'roof', { friction: FRICTION_DEFAULT, wind: -0.25 }),
 ];
