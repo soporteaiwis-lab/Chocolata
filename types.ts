@@ -1,3 +1,4 @@
+
 export type Vector2 = {
   x: number;
   y: number;
@@ -23,13 +24,14 @@ export enum EnemyType {
   ROOMBA = 'ROOMBA',
   DOG = 'DOG',
   BIRD = 'BIRD',
-  CUCUMBER = 'CUCUMBER'
+  CUCUMBER = 'CUCUMBER',
+  GHOST = 'GHOST' // New Enemy for Castle
 }
 
 export interface Platform extends Rect {
   type: 'solid' | 'oneway';
   isSlippery?: boolean;
-  texture?: 'grass' | 'brick' | 'table' | 'ice'; // Added for visual flair
+  texture?: 'grass' | 'brick' | 'table' | 'ice' | 'stone'; // Added stone
 }
 
 export type EnemyState = 'PATROL' | 'SLEEP' | 'ALERT' | 'CHASE' | 'HIDDEN' | 'SURPRISE';
@@ -69,7 +71,7 @@ export interface LevelData {
   id: number;
   name: string;
   description: string;
-  theme: 'kitchen' | 'garden' | 'roof';
+  theme: 'kitchen' | 'garden' | 'roof' | 'castle';
   physics: {
     friction: number;
     wind: number;
