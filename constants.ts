@@ -220,21 +220,22 @@ const LEVEL_3_MAP = [
     "XXXXXXXXXXXXXXXXXXXX", 
 ];
 
+// Fixed Level 4: Improved navigability to ensure player can reach the door and right-side yarn
 const LEVEL_4_MAP = [
-    "....................",
-    "....................",
-    "...................X",
-    "X......O...H.......X", 
-    "X..XXXXXXXXXXXX....X", 
-    "X..X...............X",
-    "X..X.....H.........X", 
-    "X..X..XXXXXX.......X",
-    "X..X.......X....O..X",
-    "X..X...O...X.......X",
-    "X..X..XXXXXX.......X",
-    "X..X.......X.......X",
-    "X..X..P....X...D...X", 
-    "X..X.......X.......X",
+    "...................D", // Top Right Exit
+    "...............=====", // Platform for exit
+    "X..O................", // Top Left Yarn
+    "XXXXXX...H..........", // Platform
+    ".....X..............",
+    ".....XXXXXXXXXXXX...", // Middle bridge
+    "................X..O", // Right side Yarn (Now accessible)
+    "....H...........XXXX",
+    "..XXXXXXX...........",
+    "........X...........",
+    "........X..H........",
+    "O.......XXXXXXXX....", // Bottom Left Yarn
+    "XX.................X",
+    "X...P..............X", // Start
     "XXXXXXXXXXXXXXXXXXXX", 
 ];
 
