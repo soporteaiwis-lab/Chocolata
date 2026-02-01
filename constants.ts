@@ -2,35 +2,51 @@ import { LevelData, EnemyType, Platform, Enemy, Yarn, Rect } from './types';
 
 // --- Physics Constants ---
 export const GRAVITY = 0.6;
-export const JUMP_FORCE = -13; 
+export const JUMP_FORCE = -13.5; // Slightly increased for better feel
 export const MOVE_SPEED = 6;
 export const FRICTION_DEFAULT = 0.8;
 export const FRICTION_ICE = 0.96; 
 export const WALL_SLIDE_SPEED = 2;
-export const WALL_JUMP_FORCE = { x: 9, y: -11 };
+export const WALL_JUMP_FORCE = { x: 10, y: -12 };
 export const SCRATCH_DURATION = 15;
 export const INVULNERABILITY_FRAMES = 60;
 export const MAX_LIVES = 9; 
 
-// --- Assets (High Quality Unsplash Textures) ---
+// --- Assets (Backgrounds Only - Platforms are now CSS Generated) ---
 export const ASSETS = {
     bg: {
-        // Vibrant, warm kitchen instead of gray stainless steel
+        // High quality atmospheric backgrounds
         kitchen: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?q=80&w=1600&auto=format&fit=crop", 
-        // Blurred forest/garden background to make foreground platforms pop
         garden: "https://images.unsplash.com/photo-1518131392939-78709569c878?q=80&w=1600&auto=format&fit=crop", 
-        // Clearer blue sky with roof details
         roof: "https://images.unsplash.com/photo-1516934898236-84883492576b?q=80&w=1600&auto=format&fit=crop",
-        // Spooky but clearer castle hall
-        castle: "https://images.unsplash.com/photo-1599691459438-66487e49e099?q=80&w=1600&auto=format&fit=crop",
+        castle: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop", // More mystical castle
     },
-    textures: {
-        brick: "https://images.unsplash.com/photo-1588612547040-798c602058b8?q=80&w=200&auto=format&fit=crop",
-        wood: "https://images.unsplash.com/photo-1513682902306-03c004386903?q=80&w=200&auto=format&fit=crop", // Darker wood for contrast
-        table: "https://images.unsplash.com/photo-1542456637-a16f6b571182?q=80&w=200&auto=format&fit=crop",
-        grass: "https://images.unsplash.com/photo-1558223611-64c6dc9014b2?q=80&w=200&auto=format&fit=crop",
-        ice: "https://images.unsplash.com/photo-1571783472097-4b7113f8c5b9?q=80&w=200&auto=format&fit=crop",
-        stone: "https://images.unsplash.com/photo-1629016943072-0bf0ce4e2608?q=80&w=200&auto=format&fit=crop",
+    // Theme Colors for CSS 3D Rendering
+    themes: {
+        kitchen: {
+            top: '#f3f4f6', // White marble top
+            face: '#d1d5db', // Grey marble face
+            side: '#6b7280', // Dark shadow
+            accent: '#e5e7eb'
+        },
+        garden: {
+            top: '#4ade80', // Grass top
+            face: '#78350f', // Dirt face
+            side: '#451a03', // Dark dirt shadow
+            accent: '#22c55e'
+        },
+        roof: {
+            top: '#f87171', // Red tile top
+            face: '#dc2626', // Darker red face
+            side: '#991b1b', // Shadow
+            accent: '#fee2e2'
+        },
+        castle: {
+            top: '#525252', // Stone top
+            face: '#262626', // Dark stone face
+            side: '#171717', // Black shadow
+            accent: '#737373'
+        }
     }
 };
 
@@ -165,6 +181,15 @@ const parseLevel = (
 };
 
 // --- Level Designs ---
+// LEGEND:
+// . = Empty
+// X = Solid Wall/Floor
+// = = One-Way Platform (Jump up through it)
+// S = Slippery Floor
+// P = Player Start
+// O = Yarn (Objective)
+// D = Door (Exit)
+// Enemies: R (Roomba), C (Cucumber), G (Dog), B (Bird), H (Ghost)
 
 const LEVEL_1_MAP = [
     "....................",
@@ -186,10 +211,10 @@ const LEVEL_1_MAP = [
 
 const LEVEL_2_MAP = [
     "....................",
-    "....................",
-    "X.....B............X",
-    "X..........O.......X",
+    "..............O.....",
+    "X.....B.....====...X",
     "X..................X",
+    "X...====...........X",
     "X.......XXXXX......X",
     "X...O..............X",
     "X.XXXXX.........O..X",
@@ -205,11 +230,10 @@ const LEVEL_2_MAP = [
 const LEVEL_3_MAP = [
     "....................",
     "....................",
-    "X..................X",
     "X...O.....B........X",
-    "X..XXX.............X", 
+    "X..===.............X", // Changed to platform for easier jump
     "X...X..............X",
-    "X...X.......XXXX...X", 
+    "X...X.......====...X", // Changed to platform
     "X.......O...X......X",
     "X...........X......X",
     "X.XXXX......X...O..X",
@@ -220,21 +244,21 @@ const LEVEL_3_MAP = [
     "XXXXXXXXXXXXXXXXXXXX", 
 ];
 
-// Fixed Level 4: Improved navigability to ensure player can reach the door and right-side yarn
+// REBUILT LEVEL 4: Verticality focus, using One-Way platforms (=) to allow climbing up without getting blocked.
 const LEVEL_4_MAP = [
     "...................D", // Top Right Exit
-    "...............=====", // Platform for exit
-    "X..O................", // Top Left Yarn
-    "XXXXXX...H..........", // Platform
-    ".....X..............",
-    ".....XXXXXXXXXXXX...", // Middle bridge
-    "................X..O", // Right side Yarn (Now accessible)
-    "....H...........XXXX",
-    "..XXXXXXX...........",
-    "........X...........",
-    "........X..H........",
-    "O.......XXXXXXXX....", // Bottom Left Yarn
-    "XX.................X",
+    "...............=====", 
+    "......O........X....", 
+    "....=====H.....X....", // Floating platform mid-air
+    "...............X....",
+    "...........O...=....", // Right side climb
+    "....H......=...=....",
+    "...........=...XXXXX",
+    "....====...=.......X",
+    "...........=.......X",
+    "....====...=.......X",
+    "O..........=.......X", // Bottom Left Yarn
+    "XX.........=.......X",
     "X...P..............X", // Start
     "XXXXXXXXXXXXXXXXXXXX", 
 ];
@@ -242,6 +266,6 @@ const LEVEL_4_MAP = [
 export const LEVELS = [
     parseLevel(LEVEL_1_MAP, 1, "La Cocina Caótica", "¡Cuidado con la Roomba!", 'kitchen', { friction: FRICTION_ICE, wind: 0 }),
     parseLevel(LEVEL_2_MAP, 2, "El Jardín", "No despiertes a los perros.", 'garden', { friction: FRICTION_DEFAULT, wind: 0 }),
-    parseLevel(LEVEL_3_MAP, 3, "El Tejado", "¡Mucho viento!", 'roof', { friction: FRICTION_DEFAULT, wind: -0.25 }),
+    parseLevel(LEVEL_3_MAP, 3, "El Tejado", "¡Mucho viento!", 'roof', { friction: FRICTION_DEFAULT, wind: -0.2 }),
     parseLevel(LEVEL_4_MAP, 4, "El Castillo Embrujado", "¡Rescata a Ayelen!", 'castle', { friction: FRICTION_DEFAULT, wind: 0 }),
 ];

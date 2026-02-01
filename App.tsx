@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { 
-  Menu, RefreshCw, Play, PawPrint, Volume2, VolumeX, Heart, Save, ArrowRightCircle, Star
+  Menu, RefreshCw, Play, PawPrint, Volume2, VolumeX, Heart, Save, ArrowRightCircle, Star, Sparkles
 } from 'lucide-react';
 import { 
   GRAVITY, JUMP_FORCE, MOVE_SPEED, PLAYER_SIZE, LEVELS, SCRATCH_DURATION, 
   INVULNERABILITY_FRAMES, WALL_SLIDE_SPEED, WALL_JUMP_FORCE, TILE_SIZE, MAX_LIVES, ASSETS 
 } from './constants';
 import { 
-  LevelData, Rect, Enemy, EnemyType, Particle, GameStatus, ParticleType
+  LevelData, Rect, Enemy, EnemyType, Particle, GameStatus, ParticleType, Platform
 } from './types';
 
 // --- Utils ---
@@ -24,11 +24,14 @@ const getDistance = (r1: Rect, r2: Rect) => {
     return Math.sqrt(dx*dx + dy*dy);
 };
 
-// --- SVG Components (Optimized) ---
+// --- SVG Components (Optimized & Styled) ---
 
 const ChocolataSprite = ({ isAttacking, facingRight, runFrame }: { isAttacking: boolean, facingRight: boolean, runFrame: number }) => (
-    <svg viewBox="0 0 64 64" width="100%" height="100%" style={{ overflow: 'visible', filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.4))' }}>
+    <svg viewBox="0 0 64 64" width="100%" height="100%" style={{ overflow: 'visible', filter: 'drop-shadow(0 4px 2px rgba(0,0,0,0.4))' }}>
         <g transform={`scale(${facingRight ? 1 : -1}, 1) translate(${facingRight ? 0 : -64}, 0)`}>
+            {/* Shadow under feet for 3D feel */}
+            <ellipse cx="32" cy="60" rx="15" ry="4" fill="rgba(0,0,0,0.3)" />
+            
             <path d="M10 45 Q-5 30 5 15" stroke="#1f2937" strokeWidth="4" fill="none" strokeLinecap="round" className="animate-[wiggle_1s_ease-in-out_infinite]"/>
             <ellipse cx="20" cy={55 + (runFrame % 2 * 2)} rx="5" ry="6" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
             <ellipse cx="32" cy="45" rx="20" ry="16" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
@@ -43,18 +46,12 @@ const ChocolataSprite = ({ isAttacking, facingRight, runFrame }: { isAttacking: 
                 <circle cx="5" cy="-2" r="2" fill="#000"/>
                 <path d="M-3 4 Q0 6 3 4" fill="none" stroke="#000" strokeWidth="1.5"/>
                 <circle cx="0" cy="2" r="1.5" fill="#pink"/>
-                <g opacity="0.5">
-                    <line x1="-8" y1="2" x2="-14" y2="0" stroke="#000" strokeWidth="1"/>
-                    <line x1="-8" y1="4" x2="-14" y2="6" stroke="#000" strokeWidth="1"/>
-                    <line x1="8" y1="2" x2="14" y2="0" stroke="#000" strokeWidth="1"/>
-                    <line x1="8" y1="4" x2="14" y2="6" stroke="#000" strokeWidth="1"/>
-                </g>
             </g>
             {isAttacking && (
                 <g className="animate-pulse">
-                    <path d="M50 20 L70 10" stroke="white" strokeWidth="3"/>
-                    <path d="M52 30 L75 30" stroke="white" strokeWidth="3"/>
-                    <path d="M50 40 L70 50" stroke="white" strokeWidth="3"/>
+                    <path d="M50 20 L75 10" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+                    <path d="M52 30 L80 30" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+                    <path d="M50 40 L75 50" stroke="white" strokeWidth="3" strokeLinecap="round"/>
                 </g>
             )}
         </g>
@@ -78,10 +75,6 @@ const AyelenSprite = ({ mood = 'happy' }: { mood?: 'happy' | 'scared' }) => (
             <>
             <path d="M30 75 Q15 90 25 105" stroke="#ff6b6b" strokeWidth="8" strokeLinecap="round" fill="none"/>
             <circle cx="25" cy="105" r="5" fill="#ffe0bd"/>
-            <g className="animate-[wiggle_1s_ease-in-out_infinite] origin-bottom-left" style={{ transformBox: 'fill-box' }}>
-                 <path d="M70 75 L85 50" stroke="#ff6b6b" strokeWidth="8" strokeLinecap="round"/>
-                 <circle cx="85" cy="50" r="5" fill="#ffe0bd"/>
-            </g>
             </>
         ) : (
             <path d="M30 80 Q50 90 70 80" stroke="#ff6b6b" strokeWidth="8" strokeLinecap="round" fill="none"/>
@@ -91,18 +84,26 @@ const AyelenSprite = ({ mood = 'happy' }: { mood?: 'happy' | 'scared' }) => (
         <circle cx="42" cy="42" r="2" fill="#333"/>
         <circle cx="58" cy="42" r="2" fill="#333"/>
         <path d={mood === 'happy' ? "M42 52 Q50 58 58 52" : "M45 55 Q50 50 55 55"} stroke="#333" strokeWidth="1.5" fill="none"/>
-        <circle cx="35" cy="48" r="3" fill="#ffaaaa" opacity="0.5"/>
-        <circle cx="65" cy="48" r="3" fill="#ffaaaa" opacity="0.5"/>
         <path d="M25 45 Q25 20 50 20 Q75 20 75 45 Q75 30 70 25 Q50 15 30 25 Q25 35 25 45" fill="#3E2723"/>
     </svg>
 );
 
 const GhostSprite = () => (
-    <svg viewBox="0 0 40 40" width="100%" height="100%" className="w-full h-full opacity-80 animate-pulse">
-        <path d="M5 20 Q5 5 20 5 Q35 5 35 20 L35 35 Q30 30 25 35 Q20 30 15 35 Q10 30 5 35 Z" fill="#e2e8f0" filter="drop-shadow(0 0 5px #a855f7)"/>
-        <circle cx="15" cy="18" r="2" fill="#000"/>
-        <circle cx="25" cy="18" r="2" fill="#000"/>
-        <ellipse cx="20" cy="25" rx="3" ry="5" fill="#000"/>
+    <svg viewBox="0 0 64 64" width="100%" height="100%" className="animate-[bounce_2s_infinite]" style={{ overflow: 'visible', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.6))' }}>
+         <defs>
+            <radialGradient id="ghostGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#fff" stopOpacity="0.9"/>
+                <stop offset="100%" stopColor="#e0e7ff" stopOpacity="0.6"/>
+            </radialGradient>
+        </defs>
+        <path d="M12 60 L12 30 Q12 4 32 4 Q52 4 52 30 L52 60 L42 50 L32 60 L22 50 L12 60 Z" fill="url(#ghostGrad)" stroke="#c7d2fe" strokeWidth="1.5" />
+        <circle cx="24" cy="24" r="3" fill="#1e1b4b" />
+        <circle cx="40" cy="24" r="3" fill="#1e1b4b" />
+        <path d="M28 36 Q32 30 36 36" stroke="#1e1b4b" strokeWidth="2" fill="none" opacity="0.5"/>
+        <g className="animate-pulse">
+            <circle cx="10" cy="15" r="2" fill="#fff" opacity="0.6" />
+            <circle cx="54" cy="40" r="1.5" fill="#fff" opacity="0.6" />
+        </g>
     </svg>
 );
 
@@ -135,7 +136,7 @@ const AudioEngine = {
     playSFX: (type: 'jump' | 'collect' | 'scratch' | 'hit' | 'win' | 'open') => {
         if (!AudioEngine.ctx) return;
         switch (type) {
-            case 'jump': AudioEngine.playTone(400, 'square', 0.1, 0.05); setTimeout(() => AudioEngine.playTone(600, 'square', 0.1, 0.05), 50); break;
+            case 'jump': AudioEngine.playTone(400, 'square', 0.05, 0.05); setTimeout(() => AudioEngine.playTone(500, 'square', 0.1, 0.05), 50); break;
             case 'collect': AudioEngine.playTone(1200, 'sine', 0.1, 0.1); setTimeout(() => AudioEngine.playTone(1800, 'sine', 0.2, 0.1), 100); break;
             case 'scratch': AudioEngine.playTone(200, 'sawtooth', 0.1, 0.1); break;
             case 'hit': AudioEngine.playTone(150, 'sawtooth', 0.3, 0.2); setTimeout(() => AudioEngine.playTone(100, 'sawtooth', 0.3, 0.2), 100); break;
@@ -520,12 +521,59 @@ export default function App() {
       return '';
   };
 
+  // --- 3D RENDER ENGINE ---
+  const renderPlatform3D = (p: Platform, i: number, themeName: string) => {
+      const themes = ASSETS.themes as any;
+      const theme = themes[themeName] || themes.kitchen;
+      const isOneWay = p.type === 'oneway';
+      
+      // Calculate dimensions for 3D effect
+      const depth = isOneWay ? 6 : 10;
+      
+      return (
+        <div 
+            key={i}
+            style={{
+                position: 'absolute',
+                left: p.x, 
+                top: p.y, 
+                width: p.w, 
+                height: p.h,
+                zIndex: 5
+            }}
+        >
+            {/* Main Face */}
+            <div style={{
+                width: '100%',
+                height: isOneWay ? '10px' : '100%',
+                backgroundColor: theme.face,
+                backgroundImage: `linear-gradient(to bottom, ${theme.top} 0%, ${theme.face} 100%)`,
+                borderRadius: isOneWay ? '4px' : '4px',
+                position: 'relative',
+                zIndex: 2,
+                borderTop: `2px solid ${theme.top}`,
+                boxShadow: isOneWay 
+                    ? `0 ${depth}px 0 ${theme.side}, 0 ${depth+4}px 6px rgba(0,0,0,0.3)` 
+                    : `inset 0 0 10px rgba(0,0,0,0.1), 0 ${depth}px 0 ${theme.side}, 0 ${depth+5}px 10px rgba(0,0,0,0.4)`
+            }}>
+                {/* Decorative Texture Pattern (Subtle) */}
+                <div style={{
+                    position: 'absolute', inset: 0, opacity: 0.1,
+                    backgroundImage: 'radial-gradient(black 1px, transparent 1px)',
+                    backgroundSize: '10px 10px'
+                }}></div>
+            </div>
+        </div>
+      );
+  };
+
   const renderGame = () => {
       if (!levelRef.current) return null;
       const { platforms, enemies, yarns, door } = levelRef.current;
       const player = playerRef.current;
       const allYarnsCollected = yarns.every(y => y.collected);
       const isCastle = levelRef.current.theme === 'castle';
+      const currentTheme = levelRef.current.theme;
 
       return (
           <div 
@@ -536,164 +584,134 @@ export default function App() {
                 backgroundPosition: 'center',
             }}
           >
-              {/* High Contrast Overlay - Critical for Gameplay Visibility */}
-              <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
-              
-              <div className={`absolute inset-0 pointer-events-none transition-colors duration-1000 ${isCastle ? 'bg-purple-900/40 mix-blend-multiply' : ''}`}></div>
+              {/* Atmospheric Gradient Overlays */}
+              <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none"></div>
 
-              {/* HUD */}
-              <div className="absolute top-4 left-4 z-50 flex gap-4 text-white font-bold bg-black/80 p-3 rounded-2xl border border-white/20 shadow-xl backdrop-blur-md">
-                  <div className="flex items-center gap-2 text-red-400 drop-shadow-md"><Heart className="fill-current" size={24} /> x {lives}</div>
-                  <div className="flex items-center gap-2 text-yellow-400 drop-shadow-md">
-                      <div className={`w-5 h-5 rounded-full border-2 border-white ${allYarnsCollected ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`}></div> 
-                      x {yarnsCollected}/3
+              {/* HUD - Modern Glassmorphism */}
+              <div className="absolute top-4 left-4 z-50 flex gap-4 text-white font-bold">
+                  <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-lg">
+                      <Heart className="fill-red-500 text-red-500" size={20} />
+                      <span className="text-xl">{lives}</span>
                   </div>
-                  <div className="text-blue-300 drop-shadow-md">NIVEL {currentLevelIdx + 1}</div>
+                  <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2 shadow-lg">
+                      <div className={`w-5 h-5 rounded-full border-2 border-white ${allYarnsCollected ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`}></div>
+                      <span className="text-xl text-yellow-400">{yarnsCollected}/3</span>
+                  </div>
+                  <div className="bg-blue-600/80 backdrop-blur-md px-4 py-2 rounded-full border border-blue-400/30 shadow-lg">
+                      LEVEL {currentLevelIdx + 1}
+                  </div>
               </div>
 
               {showDoorMessage && (
-                  <div className="absolute top-32 left-1/2 -translate-x-1/2 bg-yellow-400 text-black px-8 py-4 rounded-xl border-4 border-black font-bold animate-bounce z-50 shadow-2xl text-2xl tracking-wider">
-                      {isCastle ? "¡JAULA ABIERTA!" : "¡PUERTA ABIERTA!"}
+                  <div className="absolute top-32 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-500 to-yellow-300 text-black px-8 py-3 rounded-xl border-b-4 border-yellow-700 font-bold animate-bounce z-50 shadow-2xl text-xl tracking-wider flex items-center gap-2">
+                     <Sparkles size={24}/> {isCastle ? "¡JAULA ABIERTA!" : "¡PUERTA ABIERTA!"} <Sparkles size={24}/>
                   </div>
               )}
 
               {/* Door/Cage */}
               <div 
-                className={`absolute transition-all duration-500 z-0 ${allYarnsCollected ? 'shadow-[0_0_40px_#22c55e]' : ''}`}
+                className={`absolute transition-all duration-500 z-0`}
                 style={{ 
                     left: door.x, top: door.y, width: door.w, height: door.h,
-                    backgroundColor: isCastle ? 'transparent' : (allYarnsCollected ? '#4ade80' : '#451a03'),
-                    border: isCastle ? 'none' : '4px solid #2a1b1a',
-                    boxShadow: isCastle ? 'none' : '5px 5px 10px rgba(0,0,0,0.5)',
-                    transform: 'translateZ(0)'
+                    zIndex: 1
                 }}
               >
                   {isCastle ? (
-                      <div className="w-full h-full border-4 border-gray-500 bg-black/50 relative rounded-t-xl overflow-hidden">
-                          <div className={`absolute inset-0 flex justify-between px-1 transition-transform duration-1000 ${allYarnsCollected ? '-translate-y-full' : 'translate-y-0'}`}>
-                              <div className="w-1 h-full bg-gray-400 shadow-[0_0_5px_black]"></div>
-                              <div className="w-1 h-full bg-gray-400 shadow-[0_0_5px_black]"></div>
-                              <div className="w-1 h-full bg-gray-400 shadow-[0_0_5px_black]"></div>
-                          </div>
-                           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-24">
+                      <div className="w-full h-full relative">
+                           {/* Cage Bars */}
+                           <div className={`absolute inset-0 border-4 border-gray-600 bg-black/40 rounded-t-lg z-20 transition-transform duration-1000 ${allYarnsCollected ? '-translate-y-[120%]' : ''}`}>
+                                <div className="absolute left-1/4 top-0 bottom-0 w-1 bg-gray-500"></div>
+                                <div className="absolute left-2/4 top-0 bottom-0 w-1 bg-gray-500"></div>
+                                <div className="absolute left-3/4 top-0 bottom-0 w-1 bg-gray-500"></div>
+                           </div>
+                           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-24 z-10">
                               <AyelenSprite mood={allYarnsCollected ? 'happy' : 'scared'} />
                            </div>
                       </div>
                   ) : (
-                    <>
-                        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-full text-center text-[10px] text-white/80 font-bold bg-black/40 rounded">
+                    <div className="relative w-full h-full">
+                         {/* 3D Door Frame */}
+                         <div className="absolute inset-0 bg-amber-900 border-4 border-amber-950 rounded-t-full shadow-lg"></div>
+                         {/* Door Inner */}
+                         <div className={`absolute inset-2 bg-black rounded-t-full overflow-hidden transition-all duration-500 ${allYarnsCollected ? 'bg-yellow-200/20' : ''}`}>
+                             {allYarnsCollected && <div className="absolute inset-0 bg-white/40 animate-pulse"></div>}
+                         </div>
+                         <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/50 px-2 py-1 rounded text-[10px] text-white font-bold whitespace-nowrap">
                             {allYarnsCollected ? 'EXIT' : 'LOCKED'}
-                        </div>
-                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-black/50 rounded-full border-2 border-yellow-600 ${allYarnsCollected ? 'opacity-0' : 'opacity-100'}`}></div>
-                        {allYarnsCollected && <div className="absolute inset-0 bg-white/20 animate-pulse"></div>}
-                    </>
+                         </div>
+                    </div>
                   )}
               </div>
 
-              {platforms.map((p, i) => {
-                  let textureUrl = ASSETS.textures.brick;
-                  if (p.texture === 'table') textureUrl = ASSETS.textures.wood;
-                  if (p.texture === 'ice') textureUrl = ASSETS.textures.ice;
-                  if (p.texture === 'grass') textureUrl = ASSETS.textures.grass;
-                  if (p.texture === 'stone') textureUrl = ASSETS.textures.stone;
-                  const isOneWay = p.type === 'oneway';
+              {/* Render Platforms with new 3D Engine */}
+              {platforms.map((p, i) => renderPlatform3D(p, i, currentTheme))}
 
-                  // HIGH CONTRAST STYLING
-                  let borderTopStyle = '2px solid rgba(255,255,255,0.5)';
-                  
-                  // Double border for extreme contrast against busy backgrounds
-                  const boxShadow = '0 0 0 1px white, 0 8px 15px rgba(0,0,0,0.8)';
-                  
-                  if (p.texture === 'grass') {
-                      borderTopStyle = '4px solid #86efac'; 
-                  } else if (p.texture === 'ice') {
-                      borderTopStyle = '3px solid #cffafe';
-                  }
-
-                  return (
-                    <div 
-                        key={i} 
-                        className="absolute box-border"
-                        style={{ 
-                            left: p.x, top: p.y, width: p.w, 
-                            // Add a dark underlay color so opacity of texture doesn't matter
-                            backgroundColor: '#1f2937', 
-                            backgroundImage: `url(${textureUrl})`,
-                            backgroundSize: '40px 40px',
-                            borderTop: borderTopStyle,
-                            borderRadius: isOneWay ? '6px' : '2px',
-                            height: isOneWay ? '15px' : p.h,
-                            boxShadow: boxShadow,
-                            imageRendering: 'pixelated'
-                        }}
-                    >
-                        {/* Inner shadow for depth */}
-                        <div className="absolute inset-0 bg-black/10 pointer-events-none shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]"></div>
-                    </div>
-                  );
-              })}
-
+              {/* Yarn Collectibles */}
               {yarns.filter(y => !y.collected).map(y => (
                   <div 
                     key={y.id} 
-                    className="absolute bg-yellow-400 rounded-full border-2 border-white animate-bounce flex items-center justify-center z-10"
-                    style={{ 
-                        left: y.x, top: y.y, width: y.w, height: y.h,
-                        boxShadow: '0 0 15px #facc15, 0 0 0 2px black'
-                    }}
+                    className="absolute z-10 animate-[bounce_2s_infinite]"
+                    style={{ left: y.x, top: y.y, width: y.w, height: y.h }}
                   >
-                      <div className="w-full h-[1px] bg-yellow-700 absolute rotate-45"></div>
-                      <div className="w-full h-[1px] bg-yellow-700 absolute -rotate-45"></div>
-                      <div className="w-full h-[1px] bg-yellow-700 absolute rotate-90"></div>
+                      <div className="w-full h-full bg-yellow-400 rounded-full border-2 border-white shadow-[0_0_15px_#facc15] relative overflow-hidden">
+                          {/* Yarn Texture details */}
+                          <div className="absolute inset-0 border-t border-black/10 rotate-45 transform translate-y-1"></div>
+                          <div className="absolute inset-0 border-t border-black/10 rotate-45 transform translate-y-3"></div>
+                      </div>
+                      <div className="absolute -inset-2 bg-yellow-400/30 blur-md rounded-full -z-10 animate-pulse"></div>
                   </div>
               ))}
 
+              {/* Enemies */}
               {enemies.filter(e => !e.isDead).map(e => (
                   <div 
                     key={e.id} 
-                    className={`absolute transition-transform duration-200 ${e.direction === 1 ? 'scale-x-[-1]' : ''}`}
+                    className={`absolute z-10 transition-transform duration-200 ${e.direction === 1 ? 'scale-x-[-1]' : ''}`}
                     style={{ 
                         left: e.x, top: e.y, width: e.w, height: e.h,
                         opacity: e.state === 'HIDDEN' ? 0 : 1,
-                        filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.5))'
                     }}
                   >
                     {e.enemyType === EnemyType.ROOMBA && (
                         <div className="w-full h-full relative">
-                            <div className="absolute bottom-0 w-full h-3/4 bg-gray-800 rounded-full border-2 border-white/50 overflow-hidden shadow-xl">
-                                <div className="absolute top-1 left-1/2 -translate-x-1/2 w-6 h-6 border-2 border-gray-500 rounded-full bg-black/60"></div>
+                            <div className="absolute bottom-0 w-full h-3/4 bg-gray-800 rounded-full border border-gray-600 shadow-xl overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-900"></div>
                             </div>
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-2 bg-red-500 rounded-full animate-ping shadow-[0_0_10px_red]"></div>
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-red-500 rounded-full animate-ping shadow-[0_0_10px_red]"></div>
+                            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-red-600 rounded-full"></div>
                         </div>
                     )}
                     {e.enemyType === EnemyType.DOG && (
                         <div className="w-full h-full relative">
-                             <div className={`w-full h-full bg-amber-800 rounded-xl border-2 border-white/30 ${e.state === 'SLEEP' ? 'scale-y-75 mt-2' : ''} shadow-lg`}>
-                                 <div className="absolute top-0 right-0 w-3 h-3 bg-amber-950 rounded-full"></div>
-                                 <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full"><div className="w-1 h-1 bg-black rounded-full ml-0.5"></div></div>
-                                 <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-2 bg-black rounded-full"></div>
+                             <div className={`w-full h-full bg-amber-800 rounded-2xl border-2 border-amber-950 ${e.state === 'SLEEP' ? 'scale-y-75 mt-2' : ''} shadow-lg relative overflow-hidden`}>
+                                 <div className="absolute top-1 right-1 w-3 h-3 bg-amber-950 rounded-full"></div>
+                                 <div className="absolute top-2 right-4 w-3 h-3 bg-white rounded-full"><div className="w-1.5 h-1.5 bg-black rounded-full ml-0.5 mt-0.5"></div></div>
                              </div>
-                             {e.state === 'SLEEP' && <div className="absolute -top-6 right-0 text-lg animate-pulse font-bold text-white drop-shadow-md">Zzz</div>}
+                             {e.state === 'SLEEP' && <div className="absolute -top-8 right-0 text-2xl animate-pulse font-bold text-white drop-shadow-md">Zzz</div>}
                          </div>
                     )}
                     {e.enemyType === EnemyType.BIRD && (
                         <div className="w-full h-full relative">
-                            <div className="w-full h-2/3 bg-blue-500 rounded-full border border-white/30 shadow-lg"></div>
-                            <div className="absolute -top-2 right-2 w-8 h-4 bg-blue-400 rotate-[-20deg] animate-pulse rounded-full border border-black origin-bottom-left"></div>
-                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-2 bg-yellow-500"></div>
+                            <div className="w-full h-2/3 bg-sky-500 rounded-full border border-sky-700 shadow-lg relative">
+                                <div className="absolute -right-2 top-0 w-4 h-4 bg-yellow-400 rotate-45 transform origin-bottom-left rounded-sm"></div>
+                            </div>
+                            <div className="absolute -top-4 right-4 w-8 h-4 bg-sky-300 rotate-[-20deg] animate-[wiggle_0.5s_infinite] rounded-full"></div>
                         </div>
                     )}
                     {e.enemyType === EnemyType.CUCUMBER && (
-                        <div className="w-full h-full bg-green-600 rounded-full border-2 border-white/30 flex items-center justify-center shadow-lg">
-                             {e.state !== 'HIDDEN' && <div className="text-xs text-white font-bold drop-shadow-md">!!!</div>}
+                        <div className="w-full h-full bg-green-600 rounded-full border-2 border-green-800 flex items-center justify-center shadow-lg relative">
+                             <div className="w-full h-full bg-gradient-to-b from-green-500 to-green-700 rounded-full"></div>
+                             {e.state !== 'HIDDEN' && <div className="absolute -top-4 text-xs text-white font-bold drop-shadow-md bg-red-600 px-1 rounded">!</div>}
                         </div>
                     )}
                     {e.enemyType === EnemyType.GHOST && <GhostSprite />}
                   </div>
               ))}
 
+              {/* Player */}
               <div 
-                className={`absolute transition-opacity z-10 ${player.invulnerableTimer > 0 && player.invulnerableTimer % 4 < 2 ? 'opacity-50' : 'opacity-100'}`}
+                className={`absolute z-20 transition-opacity ${player.invulnerableTimer > 0 && player.invulnerableTimer % 4 < 2 ? 'opacity-50' : 'opacity-100'}`}
                 style={{ 
                     left: player.x, top: player.y, width: player.w, height: player.h,
                 }}
@@ -701,7 +719,7 @@ export default function App() {
                  <ChocolataSprite isAttacking={player.isAttacking} facingRight={player.facingRight} runFrame={Math.floor(player.frame / 5)} />
               </div>
 
-              {/* Dynamic Particles */}
+              {/* Particles */}
               {particlesRef.current.map(p => {
                   const style = {
                       left: p.x, top: p.y, 
@@ -716,10 +734,10 @@ export default function App() {
                       return <Star key={p.id} className="absolute text-yellow-400 fill-yellow-400" size={p.size * 2} style={{...style, width: p.size*2, height: p.size*2}} />;
                   }
                   if (p.type === 'dust') {
-                      return <div key={p.id} className="absolute rounded-full" style={{...style, filter: 'blur(1px)'}}></div>;
+                      return <div key={p.id} className="absolute rounded-full bg-white/50 blur-[1px]" style={style}></div>;
                   }
                   if (p.type === 'scratch') {
-                      return <div key={p.id} className="absolute bg-white" style={{...style, height: 2, width: p.size * 3}}></div>;
+                      return <div key={p.id} className="absolute bg-white shadow-[0_0_5px_white]" style={{...style, height: 2, width: p.size * 3}}></div>;
                   }
 
                   return (
@@ -731,10 +749,10 @@ export default function App() {
   };
 
   return (
-    <div className="fixed inset-0 bg-[#0a0a0a] flex items-center justify-center font-mono select-none overflow-hidden">
-        <div className="absolute inset-0 opacity-20" style={{ 
-            backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', 
-            backgroundSize: '30px 30px' 
+    <div className="fixed inset-0 bg-[#0f0f13] flex items-center justify-center font-sans select-none overflow-hidden">
+        {/* Cinematic Background */}
+        <div className="absolute inset-0 opacity-10" style={{ 
+            backgroundImage: 'repeating-linear-gradient(45deg, #222 0px, #222 10px, #111 10px, #111 20px)',
         }}></div>
 
         <div 
@@ -744,34 +762,35 @@ export default function App() {
                 height: 600,
                 transformOrigin: 'center center'
             }}
-            className="relative shadow-2xl bg-black"
+            className="relative shadow-2xl bg-black rounded-xl overflow-hidden ring-8 ring-gray-900"
         >
-            <div className="absolute -top-16 w-full text-center">
-                 <h1 className="text-5xl text-yellow-400 font-bold tracking-wider drop-shadow-[0_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-6" style={{ fontFamily: 'Impact, sans-serif' }}>
-                    <PawPrint size={48} className="fill-yellow-600" /> LAS AVENTURAS DE CHOCOLATA <PawPrint size={48} className="fill-yellow-600" />
+            <div className="absolute -top-20 w-full text-center">
+                 <h1 className="text-5xl text-yellow-400 font-extrabold tracking-wider drop-shadow-[0_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-6" style={{ fontFamily: 'Impact, sans-serif' }}>
+                    <PawPrint size={48} className="fill-yellow-600" /> CHOCOLATA 3D <PawPrint size={48} className="fill-yellow-600" />
                 </h1>
             </div>
 
             {status === 'MENU' && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-                    <div className="bg-neutral-900 border-4 border-neutral-700 p-10 rounded-3xl text-center shadow-2xl max-w-2xl w-full relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600 animate-pulse"></div>
-                        <p className="text-2xl text-white font-bold mb-8 drop-shadow-md">¡Ayuda a Chocolata a recuperar sus ovillos!</p>
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+                    <div className="bg-neutral-900/90 border border-neutral-700 p-12 rounded-3xl text-center shadow-2xl max-w-2xl w-full relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent"></div>
+                        <h2 className="text-3xl text-white font-bold mb-2">Misión: Rescate de Ovillos</h2>
+                        <p className="text-gray-400 mb-8">Navega entornos 3D, esquiva enemigos y salva a Ayelen.</p>
                         
-                        <div className="flex flex-col gap-4 items-center">
+                        <div className="flex flex-col gap-4 items-center w-3/4 mx-auto">
                             {unlockedLevel > 0 && (
-                                <button onClick={() => startGame(true)} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-xl text-xl border-b-4 border-green-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 shadow-lg">
-                                    <ArrowRightCircle size={28} /> CONTINUAR (NIVEL {unlockedLevel + 1})
+                                <button onClick={() => startGame(true)} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-4 px-8 rounded-xl text-xl shadow-lg transform transition-all hover:scale-105 flex items-center justify-center gap-3">
+                                    <ArrowRightCircle size={28} /> NIVEL {unlockedLevel + 1}
                                 </button>
                             )}
-                            <button onClick={() => startGame(false)} className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-4 px-8 rounded-xl text-xl border-b-4 border-yellow-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 shadow-lg">
+                            <button onClick={() => startGame(false)} className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-black font-bold py-4 px-8 rounded-xl text-xl shadow-lg transform transition-all hover:scale-105 flex items-center justify-center gap-3">
                                 <Play size={28} /> NUEVA PARTIDA
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 text-xs text-left bg-black/40 p-4 rounded-xl border border-white/10 mt-8 text-gray-400">
-                            <div className="flex items-center gap-2"><span className="text-yellow-400 font-bold bg-white/10 px-2 py-1 rounded">FLECHAS</span> Mover</div>
-                            <div className="flex items-center gap-2"><span className="text-yellow-400 font-bold bg-white/10 px-2 py-1 rounded">ESPACIO</span> Arañar</div>
+                        <div className="flex justify-center gap-8 mt-10 text-gray-500 text-sm font-bold uppercase tracking-widest">
+                            <span className="flex items-center gap-2"><div className="w-8 h-8 rounded bg-gray-800 flex items-center justify-center border border-gray-700">←</div> MOVER</span>
+                            <span className="flex items-center gap-2"><div className="w-20 h-8 rounded bg-gray-800 flex items-center justify-center border border-gray-700">SPACE</div> ATAQUE</span>
                         </div>
                     </div>
                 </div>
@@ -780,46 +799,44 @@ export default function App() {
             {status === 'PLAYING' && renderGame()}
 
             {status === 'GAME_OVER' && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-red-900/80 backdrop-blur-sm">
-                    <div className="bg-black border-4 border-red-600 p-12 rounded-3xl text-center shadow-[0_0_50px_rgba(220,38,38,0.5)]">
-                        <h2 className="text-6xl text-white font-black mb-4 drop-shadow-lg tracking-widest">GAME OVER</h2>
-                        <div className="text-8xl mb-6 animate-bounce">😿</div>
-                        <div className="flex flex-col gap-4">
-                            <button onClick={retryLevel} className="bg-white text-red-900 font-black py-4 px-8 rounded-xl hover:bg-gray-200 border-b-4 border-gray-400 active:border-b-0 active:translate-y-1 flex items-center justify-center gap-3">
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-red-950/90 backdrop-blur-md">
+                    <div className="bg-black/50 border-2 border-red-500/50 p-12 rounded-3xl text-center shadow-[0_0_100px_rgba(220,38,38,0.3)]">
+                        <h2 className="text-6xl text-red-500 font-black mb-4 tracking-widest">GAME OVER</h2>
+                        <div className="flex flex-col gap-4 mt-8">
+                            <button onClick={retryLevel} className="bg-white text-black font-bold py-4 px-12 rounded-full hover:bg-gray-200 transform hover:scale-105 transition-all flex items-center justify-center gap-3">
                                 <RefreshCw size={24} /> REINTENTAR
                             </button>
-                            <button onClick={() => setStatus('MENU')} className="text-white hover:text-red-300 font-bold py-2">SALIR AL MENÚ</button>
+                            <button onClick={() => setStatus('MENU')} className="text-white/60 hover:text-white font-bold py-2">MENÚ PRINCIPAL</button>
                         </div>
                     </div>
                 </div>
             )}
 
             {status === 'LEVEL_COMPLETE' && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-green-900/80 backdrop-blur-sm">
-                    <div className="bg-black border-4 border-green-500 p-12 rounded-3xl text-center shadow-[0_0_50px_rgba(34,197,94,0.5)]">
-                        <h2 className="text-4xl text-green-400 font-bold mb-4">¡NIVEL COMPLETADO!</h2>
-                        <div className="animate-spin text-6xl mb-4">🧶</div>
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-emerald-950/90 backdrop-blur-md">
+                    <div className="bg-black/50 border-2 border-emerald-500/50 p-12 rounded-3xl text-center shadow-[0_0_100px_rgba(16,185,129,0.3)]">
+                        <h2 className="text-4xl text-emerald-400 font-bold mb-4">¡NIVEL COMPLETADO!</h2>
+                        <div className="animate-spin text-6xl mb-4 text-yellow-400">🧶</div>
                     </div>
                 </div>
             )}
 
             {status === 'VICTORY' && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-purple-900/90 backdrop-blur-md">
-                     <div className="bg-black border-4 border-purple-500 p-12 rounded-3xl text-center shadow-[0_0_60px_rgba(168,85,247,0.6)] max-w-3xl">
-                        <h2 className="text-7xl text-white font-black mb-6 drop-shadow-[0_4px_0_#6b21a8]">¡LIBERTAD!</h2>
-                        <p className="text-2xl text-purple-200 mb-10">Has rescatado a Ayelen del Castillo Embrujado.</p>
-                        <div className="flex justify-center items-end h-48 mb-8 gap-4 border-b border-white/10 pb-8">
-                            <div className="w-24 h-24 animate-bounce"><ChocolataSprite isAttacking={false} facingRight={true} runFrame={0} /></div>
-                            <div className="w-32 h-48"><AyelenSprite mood="happy" /></div>
-                            <div className="text-6xl animate-pulse self-center">💖</div>
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-purple-950/95 backdrop-blur-xl">
+                     <div className="text-center max-w-3xl">
+                        <h2 className="text-8xl text-transparent bg-clip-text bg-gradient-to-b from-purple-300 to-purple-600 font-black mb-6 drop-shadow-2xl">¡LIBERTAD!</h2>
+                        <p className="text-2xl text-purple-200 mb-10 font-light">Ayelen ha sido rescatada del Castillo.</p>
+                        <div className="flex justify-center items-end h-64 mb-12 gap-8 bg-black/30 rounded-3xl p-8 border border-white/5">
+                            <div className="w-32 h-32 animate-bounce"><ChocolataSprite isAttacking={false} facingRight={true} runFrame={0} /></div>
+                            <div className="w-40 h-64"><AyelenSprite mood="happy" /></div>
                         </div>
-                        <button onClick={() => setStatus('MENU')} className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 px-12 rounded-xl text-xl shadow-lg border-b-4 border-purple-800 active:border-b-0 active:translate-y-1">VOLVER AL MENÚ</button>
+                        <button onClick={() => setStatus('MENU')} className="bg-white text-purple-900 font-bold py-4 px-16 rounded-full text-xl shadow-2xl hover:bg-purple-100 transform hover:scale-105 transition-all">VOLVER AL MENÚ</button>
                     </div>
                 </div>
             )}
 
-            <div className="absolute bottom-4 left-4 right-4 flex justify-between text-white/50 text-xs font-bold pointer-events-none">
-                 <span>v2.2 VISUAL REMASTER</span>
+            <div className="absolute bottom-4 left-4 right-4 flex justify-between text-white/30 text-xs font-bold pointer-events-none">
+                 <span>v3.0 PRO 3D ENGINE</span>
                  <div className="pointer-events-auto cursor-pointer flex items-center gap-2 hover:text-white transition-colors" onClick={() => setIsMuted(!isMuted)}>
                     {isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>} {isMuted ? "SILENCIO" : "SONIDO ON"}
                  </div>
