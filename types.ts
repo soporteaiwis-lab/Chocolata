@@ -57,6 +57,8 @@ export interface Yarn extends Rect {
   collected: boolean;
 }
 
+export type ParticleType = 'dust' | 'sparkle' | 'hit' | 'scratch' | 'star';
+
 export interface Particle {
   id: string;
   x: number;
@@ -64,7 +66,12 @@ export interface Particle {
   vx: number;
   vy: number;
   life: number;
+  maxLife: number;
   color: string;
+  size: number;
+  type: ParticleType;
+  rotation: number;
+  rotSpeed: number;
 }
 
 export interface LevelData {

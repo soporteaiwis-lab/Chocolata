@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { 
-  Menu, RefreshCw, Play, PawPrint, Volume2, VolumeX, Heart, Save, ArrowRightCircle
+  Menu, RefreshCw, Play, PawPrint, Volume2, VolumeX, Heart, Save, ArrowRightCircle, Star
 } from 'lucide-react';
 import { 
   GRAVITY, JUMP_FORCE, MOVE_SPEED, PLAYER_SIZE, LEVELS, SCRATCH_DURATION, 
   INVULNERABILITY_FRAMES, WALL_SLIDE_SPEED, WALL_JUMP_FORCE, TILE_SIZE, MAX_LIVES, ASSETS 
 } from './constants';
 import { 
-  LevelData, Rect, Enemy, EnemyType, Particle, GameStatus
+  LevelData, Rect, Enemy, EnemyType, Particle, GameStatus, ParticleType
 } from './types';
 
 // --- Utils ---
@@ -27,7 +27,7 @@ const getDistance = (r1: Rect, r2: Rect) => {
 // --- SVG Components (Optimized) ---
 
 const ChocolataSprite = ({ isAttacking, facingRight, runFrame }: { isAttacking: boolean, facingRight: boolean, runFrame: number }) => (
-    <svg viewBox="0 0 64 64" width="100%" height="100%" style={{ overflow: 'visible', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))' }}>
+    <svg viewBox="0 0 64 64" width="100%" height="100%" style={{ overflow: 'visible', filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.4))' }}>
         <g transform={`scale(${facingRight ? 1 : -1}, 1) translate(${facingRight ? 0 : -64}, 0)`}>
             <path d="M10 45 Q-5 30 5 15" stroke="#1f2937" strokeWidth="4" fill="none" strokeLinecap="round" className="animate-[wiggle_1s_ease-in-out_infinite]"/>
             <ellipse cx="20" cy={55 + (runFrame % 2 * 2)} rx="5" ry="6" fill="#fff" stroke="#1f2937" strokeWidth="2"/>
@@ -50,7 +50,13 @@ const ChocolataSprite = ({ isAttacking, facingRight, runFrame }: { isAttacking: 
                     <line x1="8" y1="4" x2="14" y2="6" stroke="#000" strokeWidth="1"/>
                 </g>
             </g>
-            {isAttacking && <path d="M50 20 L65 30 M52 25 L67 35 M50 30 L65 40" stroke="#fff" strokeWidth="3" className="animate-ping"/>}
+            {isAttacking && (
+                <g className="animate-pulse">
+                    <path d="M50 20 L70 10" stroke="white" strokeWidth="3"/>
+                    <path d="M52 30 L75 30" stroke="white" strokeWidth="3"/>
+                    <path d="M50 40 L70 50" stroke="white" strokeWidth="3"/>
+                </g>
+            )}
         </g>
     </svg>
 );
@@ -178,6 +184,8 @@ export default function App() {
     isGrounded: false, isWallSliding: false, wallDir: 0, facingRight: true,
     isAttacking: false, attackTimer: 0, invulnerableTimer: 0, isDead: false, frame: 0
   });
+  const prevGroundedRef = useRef(false);
+
   const levelRef = useRef<LevelData | null>(null);
   const particlesRef = useRef<Particle[]>([]);
   const keysRef = useRef<{ [key: string]: boolean }>({});
@@ -210,7 +218,6 @@ export default function App() {
 
   const playSound = (type: 'jump' | 'collect' | 'scratch' | 'hit' | 'win' | 'open') => {
     if (isMuted) return;
-    // We assume AudioEngine.init() was called during user interaction
     AudioEngine.playSFX(type);
   };
 
@@ -242,14 +249,46 @@ export default function App() {
     particlesRef.current = [];
   };
 
-  const spawnParticles = (x: number, y: number, color: string, count: number) => {
+  const spawnParticles = (x: number, y: number, type: ParticleType, count: number, colorOverride?: string) => {
+    const theme = levelRef.current?.theme || 'kitchen';
+    
     for (let i = 0; i < count; i++) {
-      particlesRef.current.push({
-        id: Math.random().toString(),
-        x, y,
-        vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
-        life: 20 + Math.random() * 20, color
-      });
+        let life = 30 + Math.random() * 20;
+        let size = 4 + Math.random() * 4;
+        let vx = (Math.random() - 0.5) * 6;
+        let vy = (Math.random() - 0.5) * 6;
+        let color = colorOverride || '#fff';
+        let rotSpeed = (Math.random() - 0.5) * 10;
+
+        if (type === 'dust') {
+            vy = -Math.random() * 2; // Float up
+            vx = (Math.random() - 0.5) * 2;
+            life = 20 + Math.random() * 10;
+            size = 6 + Math.random() * 6;
+            color = theme === 'garden' ? '#86efac' : (theme === 'roof' ? '#e0f2fe' : '#e5e7eb');
+        } else if (type === 'hit') {
+            color = '#ef4444';
+            size = 5 + Math.random() * 5;
+            vx = (Math.random() - 0.5) * 10;
+            vy = (Math.random() - 0.5) * 10;
+        } else if (type === 'sparkle' || type === 'star') {
+            color = '#fbbf24';
+            vy = -Math.random() * 4;
+            life = 40 + Math.random() * 20;
+        } else if (type === 'scratch') {
+            color = '#fff';
+            life = 10;
+            vx = (Math.random() - 0.5) * 15;
+            vy = (Math.random() - 0.5) * 15;
+            size = 2; // Thin lines
+        }
+
+        particlesRef.current.push({
+            id: Math.random().toString(),
+            x, y, vx, vy, life, maxLife: life, color, size, type,
+            rotation: Math.random() * 360,
+            rotSpeed
+        });
     }
   };
 
@@ -291,6 +330,8 @@ export default function App() {
     if (playerRef.current.isDead) return;
     playerRef.current.isDead = true;
     playSound('hit');
+    spawnParticles(playerRef.current.x + PLAYER_SIZE.w/2, playerRef.current.y + PLAYER_SIZE.h/2, 'hit', 20);
+    
     setLives(prev => {
         const newLives = prev - 1;
         if (newLives <= 0) setStatus('GAME_OVER');
@@ -312,6 +353,7 @@ export default function App() {
 
   const handleLevelComplete = () => {
     setStatus('LEVEL_COMPLETE'); setScore(p => p + 500); playSound('win');
+    spawnParticles(playerRef.current.x, playerRef.current.y, 'star', 30);
     const nextIdx = currentLevelIdx + 1; saveProgress(nextIdx);
     setTimeout(() => {
         if (nextIdx >= LEVELS.length) setStatus('VICTORY');
@@ -337,6 +379,7 @@ export default function App() {
 
         if ((keysRef.current['z'] || keysRef.current[' ']) && player.attackTimer === 0) {
             player.isAttacking = true; player.attackTimer = SCRATCH_DURATION; playSound('scratch');
+            spawnParticles(player.x + (player.facingRight ? 30 : 0), player.y + 15, 'scratch', 5);
         }
     }
 
@@ -367,9 +410,21 @@ export default function App() {
         }
     }
 
+    // Landing Particles
+    if (!prevGroundedRef.current && player.isGrounded) {
+        spawnParticles(player.x + player.w/2, player.y + player.h, 'dust', 6);
+    }
+    prevGroundedRef.current = player.isGrounded;
+
     if (keysRef.current['ArrowUp']) {
-        if (player.isGrounded) { player.vy = JUMP_FORCE; player.isGrounded = false; playSound('jump'); } 
-        else if (player.isWallSliding) { player.vy = WALL_JUMP_FORCE.y; player.vx = -player.wallDir * WALL_JUMP_FORCE.x; player.isWallSliding = false; playSound('jump'); }
+        if (player.isGrounded) { 
+            player.vy = JUMP_FORCE; player.isGrounded = false; playSound('jump');
+            spawnParticles(player.x + player.w/2, player.y + player.h, 'dust', 4);
+        } 
+        else if (player.isWallSliding) { 
+            player.vy = WALL_JUMP_FORCE.y; player.vx = -player.wallDir * WALL_JUMP_FORCE.x; player.isWallSliding = false; playSound('jump');
+            spawnParticles(player.x + (player.wallDir === 1 ? player.w : 0), player.y + player.h/2, 'dust', 4);
+        }
     }
     if (player.isWallSliding && player.vy > 0) player.vy = Math.min(player.vy, WALL_SLIDE_SPEED);
 
@@ -385,7 +440,7 @@ export default function App() {
                 if (newVal === 3) { setShowDoorMessage(true); playSound('open'); setTimeout(() => setShowDoorMessage(false), 3000); }
                 return newVal;
             });
-            setScore(p => p + 100); playSound('collect'); spawnParticles(yarn.x + yarn.w/2, yarn.y + yarn.h/2, '#FCD34D', 10);
+            setScore(p => p + 100); playSound('collect'); spawnParticles(yarn.x + yarn.w/2, yarn.y + yarn.h/2, 'star', 15);
         }
     });
 
@@ -401,12 +456,18 @@ export default function App() {
                 hitEnemy = true; player.vy = JUMP_FORCE * 0.6; playSound('jump');
             }
             if (hitEnemy) {
-                enemy.isDead = true; setScore(p => p + 50); spawnParticles(enemy.x + enemy.w/2, enemy.y + enemy.h/2, '#EF4444', 15);
+                enemy.isDead = true; setScore(p => p + 50); spawnParticles(enemy.x + enemy.w/2, enemy.y + enemy.h/2, 'hit', 15);
             } else if (player.invulnerableTimer === 0 && !player.isDead) killPlayer();
         }
     });
 
-    particlesRef.current.forEach(p => { p.x += p.vx + (physics.wind * 0.5); p.y += p.vy; p.life--; });
+    particlesRef.current.forEach(p => { 
+        p.x += p.vx + (physics.wind * 0.5); 
+        p.y += p.vy; 
+        p.life--; 
+        p.rotation += p.rotSpeed;
+        if(p.type === 'hit' || p.type === 'dust') p.vy += 0.2; // Gravity for debris
+    });
     particlesRef.current = particlesRef.current.filter(p => p.life > 0);
 
     if (player.attackTimer > 0) { player.attackTimer--; if (player.attackTimer === 0) player.isAttacking = false; }
@@ -458,15 +519,6 @@ export default function App() {
       if (theme === 'castle') return ASSETS.bg.castle;
       return '';
   };
-  
-  const getThemeColors = () => {
-      const theme = levelRef.current?.theme || 'kitchen';
-      if (theme === 'kitchen') return '#f3f4f6';
-      if (theme === 'garden') return '#d1fae5';
-      if (theme === 'roof') return '#1e3a8a';
-      if (theme === 'castle') return '#2e1065';
-      return '#333';
-  }
 
   const renderGame = () => {
       if (!levelRef.current) return null;
@@ -477,20 +529,20 @@ export default function App() {
 
       return (
           <div 
-            className="relative w-[800px] h-[600px] overflow-hidden shadow-2xl bg-black"
+            className="relative w-[800px] h-[600px] overflow-hidden shadow-2xl bg-black border-4 border-gray-800"
             style={{ 
-                backgroundColor: getThemeColors(),
                 backgroundImage: `url(${getThemeBackground()})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                boxShadow: '0 0 50px rgba(0,0,0,0.5)'
             }}
           >
-              <div className={`absolute inset-0 pointer-events-none transition-colors duration-1000 ${isCastle ? 'bg-purple-900/40 mix-blend-multiply' : 'bg-black/5'}`}></div>
-              <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.4)_100%)]"></div>
+              {/* High Contrast Overlay - Critical for Gameplay Visibility */}
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+              
+              <div className={`absolute inset-0 pointer-events-none transition-colors duration-1000 ${isCastle ? 'bg-purple-900/40 mix-blend-multiply' : ''}`}></div>
 
               {/* HUD */}
-              <div className="absolute top-4 left-4 z-50 flex gap-4 text-white font-bold bg-black/60 p-3 rounded-2xl border border-white/10 shadow-lg backdrop-blur-md">
+              <div className="absolute top-4 left-4 z-50 flex gap-4 text-white font-bold bg-black/80 p-3 rounded-2xl border border-white/20 shadow-xl backdrop-blur-md">
                   <div className="flex items-center gap-2 text-red-400 drop-shadow-md"><Heart className="fill-current" size={24} /> x {lives}</div>
                   <div className="flex items-center gap-2 text-yellow-400 drop-shadow-md">
                       <div className={`w-5 h-5 rounded-full border-2 border-white ${allYarnsCollected ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`}></div> 
@@ -546,25 +598,16 @@ export default function App() {
                   if (p.texture === 'stone') textureUrl = ASSETS.textures.stone;
                   const isOneWay = p.type === 'oneway';
 
-                  // Definition Logic
-                  let borderStyle = isOneWay ? 'none' : '2px solid rgba(0,0,0,0.8)';
-                  let borderTopStyle = '2px solid rgba(255,255,255,0.3)';
-                  let boxShadow = '0 8px 10px rgba(0,0,0,0.5)';
+                  // HIGH CONTRAST STYLING
+                  let borderTopStyle = '2px solid rgba(255,255,255,0.5)';
+                  
+                  // Double border for extreme contrast against busy backgrounds
+                  const boxShadow = '0 0 0 1px white, 0 8px 15px rgba(0,0,0,0.8)';
                   
                   if (p.texture === 'grass') {
-                      borderStyle = '2px solid #14532d'; // Dark Green
-                      borderTopStyle = '4px solid #4ade80'; // Light Green
-                      boxShadow = '0 10px 15px rgba(0,0,0,0.6)';
-                  } else if (p.texture === 'table' || p.texture === 'wood') {
-                      borderStyle = '2px solid #451a03'; // Dark Wood
-                      borderTopStyle = '2px solid #d97706'; // Light Wood
+                      borderTopStyle = '4px solid #86efac'; 
                   } else if (p.texture === 'ice') {
-                      borderStyle = '1px solid #0891b2';
                       borderTopStyle = '3px solid #cffafe';
-                      boxShadow = '0 4px 15px rgba(6,182,212,0.4)';
-                  } else if (p.texture === 'stone') {
-                      borderStyle = '2px solid #171717';
-                      borderTopStyle = '2px solid #525252';
                   }
 
                   return (
@@ -573,17 +616,19 @@ export default function App() {
                         className="absolute box-border"
                         style={{ 
                             left: p.x, top: p.y, width: p.w, 
+                            // Add a dark underlay color so opacity of texture doesn't matter
+                            backgroundColor: '#1f2937', 
                             backgroundImage: `url(${textureUrl})`,
                             backgroundSize: '40px 40px',
-                            border: borderStyle,
                             borderTop: borderTopStyle,
-                            borderBottom: isOneWay ? 'none' : borderStyle,
-                            borderRadius: isOneWay ? '6px' : '4px',
+                            borderRadius: isOneWay ? '6px' : '2px',
                             height: isOneWay ? '15px' : p.h,
                             boxShadow: boxShadow,
                             imageRendering: 'pixelated'
                         }}
                     >
+                        {/* Inner shadow for depth */}
+                        <div className="absolute inset-0 bg-black/10 pointer-events-none shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]"></div>
                     </div>
                   );
               })}
@@ -594,7 +639,7 @@ export default function App() {
                     className="absolute bg-yellow-400 rounded-full border-2 border-white animate-bounce flex items-center justify-center z-10"
                     style={{ 
                         left: y.x, top: y.y, width: y.w, height: y.h,
-                        boxShadow: '0 0 15px #facc15'
+                        boxShadow: '0 0 15px #facc15, 0 0 0 2px black'
                     }}
                   >
                       <div className="w-full h-[1px] bg-yellow-700 absolute rotate-45"></div>
@@ -609,12 +654,13 @@ export default function App() {
                     className={`absolute transition-transform duration-200 ${e.direction === 1 ? 'scale-x-[-1]' : ''}`}
                     style={{ 
                         left: e.x, top: e.y, width: e.w, height: e.h,
-                        opacity: e.state === 'HIDDEN' ? 0 : 1
+                        opacity: e.state === 'HIDDEN' ? 0 : 1,
+                        filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.5))'
                     }}
                   >
                     {e.enemyType === EnemyType.ROOMBA && (
                         <div className="w-full h-full relative">
-                            <div className="absolute bottom-0 w-full h-3/4 bg-gray-800 rounded-full border-2 border-gray-600 overflow-hidden shadow-xl">
+                            <div className="absolute bottom-0 w-full h-3/4 bg-gray-800 rounded-full border-2 border-white/50 overflow-hidden shadow-xl">
                                 <div className="absolute top-1 left-1/2 -translate-x-1/2 w-6 h-6 border-2 border-gray-500 rounded-full bg-black/60"></div>
                             </div>
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4 h-2 bg-red-500 rounded-full animate-ping shadow-[0_0_10px_red]"></div>
@@ -622,7 +668,7 @@ export default function App() {
                     )}
                     {e.enemyType === EnemyType.DOG && (
                         <div className="w-full h-full relative">
-                             <div className={`w-full h-full bg-amber-800 rounded-xl border-2 border-black ${e.state === 'SLEEP' ? 'scale-y-75 mt-2' : ''} shadow-lg`}>
+                             <div className={`w-full h-full bg-amber-800 rounded-xl border-2 border-white/30 ${e.state === 'SLEEP' ? 'scale-y-75 mt-2' : ''} shadow-lg`}>
                                  <div className="absolute top-0 right-0 w-3 h-3 bg-amber-950 rounded-full"></div>
                                  <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full"><div className="w-1 h-1 bg-black rounded-full ml-0.5"></div></div>
                                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-2 bg-black rounded-full"></div>
@@ -632,13 +678,13 @@ export default function App() {
                     )}
                     {e.enemyType === EnemyType.BIRD && (
                         <div className="w-full h-full relative">
-                            <div className="w-full h-2/3 bg-blue-500 rounded-full border border-black shadow-lg"></div>
+                            <div className="w-full h-2/3 bg-blue-500 rounded-full border border-white/30 shadow-lg"></div>
                             <div className="absolute -top-2 right-2 w-8 h-4 bg-blue-400 rotate-[-20deg] animate-pulse rounded-full border border-black origin-bottom-left"></div>
                             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-2 bg-yellow-500"></div>
                         </div>
                     )}
                     {e.enemyType === EnemyType.CUCUMBER && (
-                        <div className="w-full h-full bg-green-600 rounded-full border-2 border-green-800 flex items-center justify-center shadow-lg">
+                        <div className="w-full h-full bg-green-600 rounded-full border-2 border-white/30 flex items-center justify-center shadow-lg">
                              {e.state !== 'HIDDEN' && <div className="text-xs text-white font-bold drop-shadow-md">!!!</div>}
                         </div>
                     )}
@@ -655,9 +701,31 @@ export default function App() {
                  <ChocolataSprite isAttacking={player.isAttacking} facingRight={player.facingRight} runFrame={Math.floor(player.frame / 5)} />
               </div>
 
-              {particlesRef.current.map(p => (
-                  <div key={p.id} className="absolute w-2 h-2 rounded-full" style={{ left: p.x, top: p.y, backgroundColor: p.color, opacity: p.life / 20, boxShadow: `0 0 5px ${p.color}` }}></div>
-              ))}
+              {/* Dynamic Particles */}
+              {particlesRef.current.map(p => {
+                  const style = {
+                      left: p.x, top: p.y, 
+                      width: p.size, height: p.size,
+                      backgroundColor: p.type === 'star' ? 'transparent' : p.color,
+                      opacity: p.life / p.maxLife,
+                      transform: `rotate(${p.rotation}deg)`,
+                      boxShadow: p.type === 'hit' ? '0 0 10px red' : 'none'
+                  };
+                  
+                  if (p.type === 'star') {
+                      return <Star key={p.id} className="absolute text-yellow-400 fill-yellow-400" size={p.size * 2} style={{...style, width: p.size*2, height: p.size*2}} />;
+                  }
+                  if (p.type === 'dust') {
+                      return <div key={p.id} className="absolute rounded-full" style={{...style, filter: 'blur(1px)'}}></div>;
+                  }
+                  if (p.type === 'scratch') {
+                      return <div key={p.id} className="absolute bg-white" style={{...style, height: 2, width: p.size * 3}}></div>;
+                  }
+
+                  return (
+                      <div key={p.id} className="absolute rounded-sm" style={style}></div>
+                  );
+              })}
           </div>
       );
   };
@@ -751,7 +819,7 @@ export default function App() {
             )}
 
             <div className="absolute bottom-4 left-4 right-4 flex justify-between text-white/50 text-xs font-bold pointer-events-none">
-                 <span>v2.1 HD REMASTER - AUDIO ENHANCED</span>
+                 <span>v2.2 VISUAL REMASTER</span>
                  <div className="pointer-events-auto cursor-pointer flex items-center gap-2 hover:text-white transition-colors" onClick={() => setIsMuted(!isMuted)}>
                     {isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>} {isMuted ? "SILENCIO" : "SONIDO ON"}
                  </div>
